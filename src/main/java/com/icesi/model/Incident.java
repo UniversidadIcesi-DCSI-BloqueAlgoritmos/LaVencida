@@ -13,39 +13,47 @@ public class Incident {
     private String description;
 
     public Incident(String id, IncidentType type, String location, Severity severity) {
+        this.id = id;
+        this.type = type;
+        this.location = location;
+        this.severity = severity;
+        this.status = IncidentStatus.PENDING;
+        this.generatedAt = LocalDateTime.now();
     }
 
     public String getId() {
-        return null;
+        return id;
     }
 
     public IncidentType getType() {
-        return null;
+        return type;
     }
 
     public String getLocation() {
-        return null;
+        return location;
     }
 
     public Severity getSeverity() {
-        return null;
+        return severity;
     }
 
     public IncidentStatus getStatus() {
-        return null;
+        return status;
     }
 
     public LocalDateTime getGeneratedAt() {
-        return null;
+        return generatedAt;
     }
 
     public String getDescription() {
-        return null;
+        return description;
     }
 
     public void setDescription(String description) {
+        this.description = description;
     }
 
     public void setStatus(IncidentStatus status) {
+        this.status = status;
     }
 }

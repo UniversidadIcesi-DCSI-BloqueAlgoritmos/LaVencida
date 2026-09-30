@@ -16,20 +16,35 @@ public class LinkedList<T> {
     }
 
     public LinkedList() {
+        this.head = null;
+        this.tail = null;
+        this.size = 0;
     }
 
     public void addLast(T value) {
+        Node<T> newNode = new Node<>(value);
+        if (isEmpty()) {
+            head = newNode;
+        } else {
+            tail.next = newNode;
+        }
+        tail = newNode;
+        size++;
     }
 
     public T get(int index) {
-        return null;
+        Node<T> current = head;
+        for (int i = 0; i < index; i++) {
+            current = current.next;
+        }
+        return current.value;
     }
 
     public int size() {
-        return 0;
+        return size;
     }
 
     public boolean isEmpty() {
-        return true;
+        return size == 0;
     }
 }
