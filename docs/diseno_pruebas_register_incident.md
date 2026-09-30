@@ -16,3 +16,4 @@
 | Crear un IncidentManager y registrar incident1 con id "INC001". Crear incident1Duplicado con el mismo id "INC001". | Ejecutar manager.registerIncident(incident1Duplicado) | assertThrows(DuplicateIncidentException.class, () -> manager.registerIncident(incident1Duplicado)); assertEquals(1, manager.getIncidentCount()); |
 | **Caso 4: Registrar un incidente nulo lanza una excepción.** | | |
 | Crear un IncidentManager vacío. | Ejecutar manager.registerIncident(null) | assertThrows(IllegalArgumentException.class, () -> manager.registerIncident(null)); assertEquals(0, manager.getIncidentCount()); |
+
