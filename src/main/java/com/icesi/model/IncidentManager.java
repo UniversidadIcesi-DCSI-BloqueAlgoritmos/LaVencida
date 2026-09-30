@@ -36,4 +36,8 @@ public class IncidentManager {
     public Incident getIncidentAt(int index) {
         return incidents.get(index);
     }
+
+    public Incident getHighestPriorityIncident() {
+        return null;
+    }
 }
