@@ -6,15 +6,6 @@ public class LinkedList<T> {
     private Node<T> tail;
     private int size;
 
-    private static class Node<T> {
-        T value;
-        Node<T> next;
-
-        Node(T value) {
-            this.value = value;
-        }
-    }
-
     public LinkedList() {
         this.head = null;
         this.tail = null;
@@ -26,7 +17,7 @@ public class LinkedList<T> {
         if (isEmpty()) {
             head = newNode;
         } else {
-            tail.next = newNode;
+            tail.setNext(newNode);
         }
         tail = newNode;
         size++;
@@ -35,9 +26,9 @@ public class LinkedList<T> {
     public T get(int index) {
         Node<T> current = head;
         for (int i = 0; i < index; i++) {
-            current = current.next;
+            current = current.getNext();
         }
-        return current.value;
+        return current.getValue();
     }
 
     public int size() {

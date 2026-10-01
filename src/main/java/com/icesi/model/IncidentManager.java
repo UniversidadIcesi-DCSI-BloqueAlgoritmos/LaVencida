@@ -36,4 +36,31 @@ public class IncidentManager {
     public Incident getIncidentAt(int index) {
         return incidents.get(index);
     }
+
+    public Incident getHighestPriorityIncident() {
+        if (incidents.isEmpty()) {
+            throw new NoActiveIncidentsException("No hay incidentes activos registrados");
+        }
+
+        Incident best = incidents.get(0);
+        for (int i = 1; i < incidents.size(); i++) {
+            Incident current = incidents.get(i);
+            if (isHigherPriority(current, best)) {
+                best = current;
+            }
+        }
+        return best;
+    }
+
+    private boolean isHigherPriority(Incident candidate, Incident current) {
+        int severityComparison = candidate.getSeverity().ordinal() - current.getSeverity().ordinal();
+        if (severityComparison < 0) {
+            return true; // candidate tiene mayor gravedad (ordinal menor)
+        }
+        if (severityComparison > 0) {
+            return false; // current tiene mayor gravedad
+        }
+        // misma gravedad: gana el más antiguo (generatedAt menor)
+        return candidate.getGeneratedAt().isBefore(current.getGeneratedAt());
+    }
 }
