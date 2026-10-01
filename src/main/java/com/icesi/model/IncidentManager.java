@@ -63,4 +63,8 @@ public class IncidentManager {
         // misma gravedad: gana el más antiguo (generatedAt menor)
         return candidate.getGeneratedAt().isBefore(current.getGeneratedAt());
     }
+
+    public void assignVehicle(Vehicle vehicle, Incident incident) {
+
+    }
 }
