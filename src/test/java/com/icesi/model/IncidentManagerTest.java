@@ -14,6 +14,7 @@ class IncidentManagerTest {
         manager = new IncidentManager();
     }
 
+    // RF3
     // Caso 1: Registrar un incidente válido lo agrega correctamente al sistema.
     @Test
     void registerValidIncidentAddsItToTheSystem() {
@@ -66,5 +67,62 @@ class IncidentManagerTest {
         assertThrows(IllegalArgumentException.class,
                 () -> manager.registerIncident(null));
         assertEquals(0, manager.getIncidentCount());
+    }
+
+    // RF5
+    // Caso 1: Con un único incidente registrado, se retorna ese mismo incidente.
+    @Test
+    void getHighestPriorityIncidentWithSingleIncidentReturnsIt() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Norte", Severity.HIGH);
+        manager.registerIncident(incident1);
+
+        // Act
+        Incident result = manager.getHighestPriorityIncident();
+
+        // Assert
+        assertEquals(incident1, result);
+    }
+
+    // Caso 2: Con incidentes de distinta gravedad, se retorna el de mayor gravedad.
+    @Test
+    void getHighestPriorityIncidentReturnsMostSevereOne() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.LOW);
+        Incident incident2 = new Incident("INC002", IncidentType.ACCIDENT, "Zona Sur", Severity.HIGH);
+        Incident incident3 = new Incident("INC003", IncidentType.FIRE, "Zona Este", Severity.MEDIUM);
+        manager.registerIncident(incident1);
+        manager.registerIncident(incident2);
+        manager.registerIncident(incident3);
+
+        // Act
+        Incident result = manager.getHighestPriorityIncident();
+
+        // Assert
+        assertEquals(incident2, result);
+    }
+
+    // Caso 3: Con dos incidentes de la misma gravedad, se retorna el más antiguo (registrado primero).
+    @Test
+    void getHighestPriorityIncidentBreaksTiesByOldestFirst() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Norte", Severity.HIGH);
+        Incident incident2 = new Incident("INC002", IncidentType.ACCIDENT, "Zona Sur", Severity.HIGH);
+        manager.registerIncident(incident1);
+        manager.registerIncident(incident2);
+
+        // Act
+        Incident result = manager.getHighestPriorityIncident();
+
+        // Assert
+        assertEquals(incident1, result);
+    }
+
+    // Caso 4: Consultar la prioridad sin incidentes registrados lanza una excepción.
+    @Test
+    void getHighestPriorityIncidentWithNoIncidentsThrowsException() {
+        // Act & Assert
+        assertThrows(NoActiveIncidentsException.class,
+                () -> manager.getHighestPriorityIncident());
     }
 }
