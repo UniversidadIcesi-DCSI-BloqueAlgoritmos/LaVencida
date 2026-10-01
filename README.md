@@ -7,7 +7,7 @@ Fórmulas:
 - Confiabilidad = 1 - densidad de fallos
 - Completitud = casos de prueba / total funcionalidades (6)
 
-Iteración 1: 4ed0164 (esqueleto de registerIncident — aún sin pruebas)
+Iteración 1: 4ed0164 (esqueleto de registerIncident aún sin pruebas)
 Densidad de errores-fallos = N/A (0 pruebas aún)
 Confiabilidad = N/A
 Completitud = 0.0 (0/6)
