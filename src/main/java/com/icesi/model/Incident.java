@@ -72,6 +72,6 @@ public class Incident {
     }
 
     public void setAssignedVehicle(Vehicle vehicle) {
-        
+
     }
 }
