@@ -7,20 +7,24 @@ public class Vehicle {
     private VehicleStatus status;
 
     public Vehicle(String id, VehicleType type) {
+        this.id = id;
+        this.type = type;
+        this.status = VehicleStatus.AVAILABLE;
     }
 
     public String getId() {
-        return null;
+        return id;
     }
 
     public VehicleType getType() {
-        return null;
+        return type;
     }
 
     public VehicleStatus getStatus() {
-        return null;
+        return status;
     }
 
     public void setStatus(VehicleStatus status) {
+        this.status = status;
     }
 }

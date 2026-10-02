@@ -68,10 +68,10 @@ public class Incident {
     }
 
     public Vehicle getAssignedVehicle() {
-        return null;
+        return assignedVehicle;
     }
 
     public void setAssignedVehicle(Vehicle vehicle) {
-
+        this.assignedVehicle = vehicle;
     }
 }

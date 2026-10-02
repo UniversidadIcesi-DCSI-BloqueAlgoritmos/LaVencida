@@ -65,6 +65,31 @@ public class IncidentManager {
     }
 
     public void assignVehicle(Vehicle vehicle, Incident incident) {
+        if (incident.getStatus() != IncidentStatus.PENDING) {
+            throw new VehicleAssignmentException("El incidente no esta pendiente de asignacion");
+        }
+        if (vehicle.getStatus() != VehicleStatus.AVAILABLE) {
+            throw new VehicleAssignmentException("El vehiculo no esta disponible");
+        }
+        if (!isCompatible(vehicle.getType(), incident.getType())) {
+            throw new VehicleAssignmentException("El vehiculo no es compatible con el tipo de incidente");
+        }
 
+        incident.setStatus(IncidentStatus.IN_PROGRESS);
+        incident.setAssignedVehicle(vehicle);
+        vehicle.setStatus(VehicleStatus.EN_ROUTE);
+    }
+
+    private boolean isCompatible(VehicleType vehicleType, IncidentType incidentType) {
+        if (vehicleType == VehicleType.PATROL) {
+            return incidentType == IncidentType.THEFT || incidentType == IncidentType.ACCIDENT;
+        }
+        if (vehicleType == VehicleType.AMBULANCE) {
+            return incidentType == IncidentType.ACCIDENT;
+        }
+        if (vehicleType == VehicleType.FIRE_TRUCK) {
+            return incidentType == IncidentType.FIRE;
+        }
+        return false;
     }
 }
