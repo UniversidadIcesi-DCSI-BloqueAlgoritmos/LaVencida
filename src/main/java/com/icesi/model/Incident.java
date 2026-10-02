@@ -11,6 +11,7 @@ public class Incident {
     private IncidentStatus status;
     private LocalDateTime generatedAt;
     private String description;
+    private Vehicle assignedVehicle;
 
     public Incident(String id, IncidentType type, String location, Severity severity) {
         this.id = id;
@@ -22,38 +23,55 @@ public class Incident {
     }
 
     public String getId() {
+
         return id;
     }
 
     public IncidentType getType() {
+
         return type;
     }
 
     public String getLocation() {
+
         return location;
     }
 
     public Severity getSeverity() {
+
         return severity;
     }
 
     public IncidentStatus getStatus() {
+
         return status;
     }
 
     public LocalDateTime getGeneratedAt() {
+
         return generatedAt;
     }
 
     public String getDescription() {
+
         return description;
     }
 
     public void setDescription(String description) {
+
         this.description = description;
     }
 
     public void setStatus(IncidentStatus status) {
+
         this.status = status;
+    }
+
+    public Vehicle getAssignedVehicle() {
+        return assignedVehicle;
+    }
+
+    public void setAssignedVehicle(Vehicle vehicle) {
+        this.assignedVehicle = vehicle;
     }
 }

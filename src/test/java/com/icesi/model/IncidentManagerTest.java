@@ -125,4 +125,62 @@ class IncidentManagerTest {
         assertThrows(NoActiveIncidentsException.class,
                 () -> manager.getHighestPriorityIncident());
     }
+
+    // RF7
+    // Caso 1: Asignar un vehículo compatible y disponible a un incidente pendiente lo asigna correctamente.
+    @Test
+    void assignCompatibleAndAvailableVehicleToPendingIncidentAssignsIt() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+        Vehicle patrol1 = new Vehicle("VEH001", VehicleType.PATROL);
+
+        // Act
+        manager.assignVehicle(patrol1, incident1);
+
+        // Assert
+        assertEquals(IncidentStatus.IN_PROGRESS, incident1.getStatus());
+        assertEquals(VehicleStatus.EN_ROUTE, patrol1.getStatus());
+        assertEquals(patrol1, incident1.getAssignedVehicle());
+    }
+
+    // Caso 2: Asignar un vehículo incompatible con el tipo de incidente lanza una excepción.
+    @Test
+    void assignIncompatibleVehicleThrowsException() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.FIRE, "Zona Norte", Severity.HIGH);
+        Vehicle ambulance1 = new Vehicle("VEH001", VehicleType.AMBULANCE);
+
+        // Act & Assert
+        assertThrows(VehicleAssignmentException.class,
+                () -> manager.assignVehicle(ambulance1, incident1));
+        assertEquals(IncidentStatus.PENDING, incident1.getStatus());
+    }
+
+    // Caso 3: Asignar un vehículo no disponible lanza una excepción.
+    @Test
+    void assignUnavailableVehicleThrowsException() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Norte", Severity.HIGH);
+        Vehicle ambulance1 = new Vehicle("VEH001", VehicleType.AMBULANCE);
+        ambulance1.setStatus(VehicleStatus.OUT_OF_SERVICE);
+
+        // Act & Assert
+        assertThrows(VehicleAssignmentException.class,
+                () -> manager.assignVehicle(ambulance1, incident1));
+        assertEquals(IncidentStatus.PENDING, incident1.getStatus());
+    }
+
+    // Caso 4: Asignar un vehículo a un incidente que ya no está pendiente lanza una excepción.
+    @Test
+    void assignVehicleToNonPendingIncidentThrowsException() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+        incident1.setStatus(IncidentStatus.IN_PROGRESS);
+        Vehicle patrol1 = new Vehicle("VEH001", VehicleType.PATROL);
+
+        // Act & Assert
+        assertThrows(VehicleAssignmentException.class,
+                () -> manager.assignVehicle(patrol1, incident1));
+        assertEquals(VehicleStatus.AVAILABLE, patrol1.getStatus());
+    }
 }
