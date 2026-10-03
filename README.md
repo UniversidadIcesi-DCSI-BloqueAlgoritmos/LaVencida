@@ -23,3 +23,17 @@ Densidad de errores-fallos = 0.0 (0/4)
 Confiabilidad = 1.0
 Completitud = 0.67 (4/6)
 <img width="1140" height="325" alt="image" src="https://github.com/user-attachments/assets/f0a3a754-a3c3-4348-8caf-999bf571feda" />
+
+Iteración 4: 55f3074 (pruebas de assignVehicle en fase Red)
+Densidad de errores-fallos = 0.33 (4/12)
+Confiabilidad = 0.67
+Completitud = 2.0 (12/6)
+<img width="1237" height="308" alt="image" src="https://github.com/user-attachments/assets/c58db2ab-d75e-42b6-bf05-6e386e22d4ec" />
+
+
+Iteración 5: 9ae2a55 (assignVehicle implementado, pruebas en fase Green)
+Densidad de errores-fallos = 0.0 (0/12)
+Confiabilidad = 1.0
+Completitud = 2.0 (12/6)
+<img width="995" height="340" alt="image" src="https://github.com/user-attachments/assets/654c0972-56c1-4017-8590-34e183eb1642" />
+
