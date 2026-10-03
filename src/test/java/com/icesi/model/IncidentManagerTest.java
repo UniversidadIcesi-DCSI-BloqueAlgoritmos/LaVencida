@@ -183,4 +183,47 @@ class IncidentManagerTest {
                 () -> manager.assignVehicle(patrol1, incident1));
         assertEquals(VehicleStatus.AVAILABLE, patrol1.getStatus());
     }
+    //RF8
+    // Caso 1: Finalizar la atención de un incidente "En proceso" lo marca como resuelto y libera el vehículo asignado.
+    @Test
+    void finishAttentionOfInProgressIncidentResolvesItAndFreesVehicle() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+        Vehicle patrol1 = new Vehicle("VEH001", VehicleType.PATROL);
+        manager.assignVehicle(patrol1, incident1);
+
+        // Act
+        manager.finishAttention(incident1);
+
+        // Assert
+        assertEquals(IncidentStatus.RESOLVED, incident1.getStatus());
+        assertEquals(VehicleStatus.AVAILABLE, patrol1.getStatus());
+    }
+
+    // Caso 2: Finalizar un incidente que aún no ha sido atendido ("Pendiente") lanza una excepción.
+    @Test
+    void finishAttentionOfPendingIncidentThrowsException() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+
+        // Act & Assert
+        assertThrows(IncidentStateException.class,
+                () -> manager.finishAttention(incident1));
+        assertEquals(IncidentStatus.PENDING, incident1.getStatus());
+    }
+
+    // Caso 3: Finalizar un incidente que ya se encuentra "Resuelto" lanza una excepción y no vuelve a modificar el vehículo.
+    @Test
+    void finishAttentionOfResolvedIncidentThrowsExceptionAndDoesNotChangeVehicle() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Norte", Severity.HIGH);
+        Vehicle ambulance1 = new Vehicle("VEH001", VehicleType.AMBULANCE);
+        manager.assignVehicle(ambulance1, incident1);
+        manager.finishAttention(incident1);
+
+        // Act & Assert
+        assertThrows(IncidentStateException.class,
+                () -> manager.finishAttention(incident1));
+        assertEquals(VehicleStatus.AVAILABLE, ambulance1.getStatus());
+    }
 }

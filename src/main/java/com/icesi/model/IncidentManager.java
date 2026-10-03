@@ -94,6 +94,6 @@ public class IncidentManager {
     }
 
     public void finishAttention(Incident incident) {
-        
+
     }
 }
