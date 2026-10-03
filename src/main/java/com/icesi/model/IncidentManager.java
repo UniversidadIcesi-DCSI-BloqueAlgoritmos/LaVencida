@@ -92,4 +92,8 @@ public class IncidentManager {
         }
         return false;
     }
+
+    public void finishAttention(Incident incident) {
+        
+    }
 }
