@@ -94,6 +94,11 @@ public class IncidentManager {
     }
 
     public void finishAttention(Incident incident) {
-
+        if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
+            throw new IncidentStateException("El incidente no esta en proceso de atencion");
+        }
+        incident.setStatus(IncidentStatus.RESOLVED);
+        Vehicle vehicle = incident.getAssignedVehicle();
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
     }
 }
