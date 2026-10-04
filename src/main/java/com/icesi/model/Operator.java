@@ -23,14 +23,33 @@ public class Operator {
     }
 
     public void move(Direction direction) {
+        if (direction == null) {
+            throw new IllegalArgumentException("La direccion no puede ser nula");
+        }
 
+        // guardamos donde estaba antes de moverse para poder deshacer
+        movementHistory.push(new Movement(direction, row, column));
+
+        if (direction == Direction.UP) {
+            row--;
+        } else if (direction == Direction.DOWN) {
+            row++;
+        } else if (direction == Direction.LEFT) {
+            column--;
+        } else if (direction == Direction.RIGHT) {
+            column++;
+        }
     }
 
     public Movement undoLastMovement() {
-        return null;
+        // si no hay movimientos la pila lanza EmptyStructureException
+        Movement last = movementHistory.pop();
+        row = last.getPreviousRow();
+        column = last.getPreviousColumn();
+        return last;
     }
 
     public int getMovementCount() {
-        return 0;
+        return movementHistory.size();
     }
 }

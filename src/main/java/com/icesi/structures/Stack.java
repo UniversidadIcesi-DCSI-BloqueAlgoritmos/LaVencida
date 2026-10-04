@@ -2,6 +2,7 @@ package com.icesi.structures;
 
 public class Stack<T> {
 
+    // el tope de la pila es la cabeza de la lista, asi push y pop son O(1)
     private LinkedList<T> elements;
 
     public Stack() {
@@ -9,22 +10,28 @@ public class Stack<T> {
     }
 
     public void push(T value) {
-
+        elements.addFirst(value);
     }
 
     public T pop() {
-        return null;
+        if (isEmpty()) {
+            throw new EmptyStructureException("La pila esta vacia");
+        }
+        return elements.removeFirst();
     }
 
     public T peek() {
-        return null;
+        if (isEmpty()) {
+            throw new EmptyStructureException("La pila esta vacia");
+        }
+        return elements.getFirst();
     }
 
     public boolean isEmpty() {
-        return false;
+        return elements.isEmpty();
     }
 
     public int size() {
-        return 0;
+        return elements.size();
     }
 }
