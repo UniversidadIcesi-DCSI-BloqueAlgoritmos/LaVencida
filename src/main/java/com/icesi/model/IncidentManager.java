@@ -133,10 +133,31 @@ public class IncidentManager {
     }
 
     public LinkedList<Incident> getIncidentsSortedByPriority() {
-        return null;
+        // ordenamos una copia para no cambiar el orden de registro original
+        LinkedList<Incident> sorted = copyIncidents();
+        sorted.sort(new IncidentPriorityComparator());
+        return sorted;
     }
 
     public Incident findIncidentById(String id) {
-        return null;
+        IncidentIdComparator comparator = new IncidentIdComparator();
+        LinkedList<Incident> sortedById = copyIncidents();
+        sortedById.sort(comparator);
+
+        // incidente "falso" que solo sirve para comparar el ID en la busqueda binaria
+        Incident target = new Incident(id, null, null, null);
+        int index = sortedById.binarySearch(target, comparator);
+        if (index == -1) {
+            throw new IncidentNotFoundException("No existe un incidente con id " + id);
+        }
+        return sortedById.get(index);
+    }
+
+    private LinkedList<Incident> copyIncidents() {
+        LinkedList<Incident> copy = new LinkedList<>();
+        for (int i = 0; i < incidents.size(); i++) {
+            copy.addLast(incidents.get(i));
+        }
+        return copy;
     }
 }
