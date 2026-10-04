@@ -101,4 +101,8 @@ public class IncidentManager {
         Vehicle vehicle = incident.getAssignedVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
     }
+
+    public void releaseVehicle(Vehicle vehicle) {
+
+    }
 }
