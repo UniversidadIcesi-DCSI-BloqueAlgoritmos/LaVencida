@@ -1,5 +1,6 @@
 package com.icesi.model;
 
+import com.icesi.structures.LinkedList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -289,5 +290,77 @@ class IncidentManagerTest {
         assertThrows(VehicleReleaseException.class,
                 () -> manager.releaseVehicle(fireTruck1));
         assertEquals(VehicleStatus.OUT_OF_SERVICE, fireTruck1.getStatus());
+    }
+
+    // RF5 - ordenamiento
+    // Caso 1: Los incidentes se retornan ordenados de mayor a menor gravedad.
+    @Test
+    void getIncidentsSortedByPriorityOrdersFromHighToLow() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.LOW);
+        Incident incident2 = new Incident("INC002", IncidentType.ACCIDENT, "Zona Sur", Severity.HIGH);
+        Incident incident3 = new Incident("INC003", IncidentType.FIRE, "Zona Este", Severity.MEDIUM);
+        manager.registerIncident(incident1);
+        manager.registerIncident(incident2);
+        manager.registerIncident(incident3);
+
+        // Act
+        LinkedList<Incident> sorted = manager.getIncidentsSortedByPriority();
+
+        // Assert
+        assertEquals(incident2, sorted.get(0));
+        assertEquals(incident3, sorted.get(1));
+        assertEquals(incident1, sorted.get(2));
+    }
+
+    // Caso 2: Con la misma gravedad, el más antiguo queda primero y el orden original no cambia.
+    @Test
+    void getIncidentsSortedByPriorityBreaksTiesAndKeepsOriginalOrder() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+        Incident incident2 = new Incident("INC002", IncidentType.ACCIDENT, "Zona Sur", Severity.HIGH);
+        Incident incident3 = new Incident("INC003", IncidentType.FIRE, "Zona Este", Severity.HIGH);
+        manager.registerIncident(incident1);
+        manager.registerIncident(incident2);
+        manager.registerIncident(incident3);
+
+        // Act
+        LinkedList<Incident> sorted = manager.getIncidentsSortedByPriority();
+
+        // Assert
+        assertEquals(incident2, sorted.get(0));
+        assertEquals(incident3, sorted.get(1));
+        assertEquals(incident1, manager.getIncidentAt(0));
+    }
+
+    // RF3 - búsqueda binaria
+    // Caso 3: Buscar por ID un incidente registrado lo retorna.
+    @Test
+    void findIncidentByIdReturnsTheRightIncident() {
+        // Arrange
+        Incident incident1 = new Incident("INC003", IncidentType.THEFT, "Zona Norte", Severity.LOW);
+        Incident incident2 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Sur", Severity.HIGH);
+        Incident incident3 = new Incident("INC002", IncidentType.FIRE, "Zona Este", Severity.MEDIUM);
+        manager.registerIncident(incident1);
+        manager.registerIncident(incident2);
+        manager.registerIncident(incident3);
+
+        // Act
+        Incident result = manager.findIncidentById("INC002");
+
+        // Assert
+        assertEquals(incident3, result);
+    }
+
+    // Caso 4: Buscar por ID un incidente que no existe lanza una excepción.
+    @Test
+    void findIncidentByIdThatDoesNotExistThrowsException() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.LOW);
+        manager.registerIncident(incident1);
+
+        // Act & Assert
+        assertThrows(IncidentNotFoundException.class,
+                () -> manager.findIncidentById("INC999"));
     }
 }
