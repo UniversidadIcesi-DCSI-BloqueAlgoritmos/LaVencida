@@ -131,4 +131,12 @@ public class IncidentManager {
         }
         return null;
     }
+
+    public LinkedList<Incident> getIncidentsSortedByPriority() {
+        return null;
+    }
+
+    public Incident findIncidentById(String id) {
+        return null;
+    }
 }

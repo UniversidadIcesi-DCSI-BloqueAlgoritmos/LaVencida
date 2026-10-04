@@ -1,5 +1,7 @@
 package com.icesi.structures;
 
+import java.util.Comparator;
+
 public class LinkedList<T> {
 
     private Node<T> head;
@@ -69,5 +71,21 @@ public class LinkedList<T> {
 
     public boolean isEmpty() {
         return size == 0;
+    }
+
+    public T remove(int index) {
+        return null;
+    }
+
+    public boolean contains(T value) {
+        return false;
+    }
+
+    public void sort(Comparator<T> comparator) {
+
+    }
+
+    public int binarySearch(T target, Comparator<T> comparator) {
+        return 0;
     }
 }
