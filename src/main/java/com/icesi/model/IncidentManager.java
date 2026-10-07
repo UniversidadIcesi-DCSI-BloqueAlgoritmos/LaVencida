@@ -101,4 +101,34 @@ public class IncidentManager {
         Vehicle vehicle = incident.getAssignedVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
     }
+
+    public void releaseVehicle(Vehicle vehicle) {
+        if (vehicle == null) {
+            throw new IllegalArgumentException("El vehiculo no puede ser nulo");
+        }
+        if (vehicle.getStatus() == VehicleStatus.AVAILABLE) {
+            throw new VehicleReleaseException("El vehiculo ya esta disponible");
+        }
+
+        // buscamos el incidente en proceso que tiene este vehiculo asignado
+        Incident incident = findInProgressIncidentOf(vehicle);
+        if (incident == null) {
+            throw new VehicleReleaseException("El vehiculo no esta atendiendo ningun incidente");
+        }
+
+        // el incidente vuelve a quedar pendiente para poder asignarle otro vehiculo
+        incident.setAssignedVehicle(null);
+        incident.setStatus(IncidentStatus.PENDING);
+        vehicle.setStatus(VehicleStatus.AVAILABLE);
+    }
+
+    private Incident findInProgressIncidentOf(Vehicle vehicle) {
+        for (int i = 0; i < incidents.size(); i++) {
+            Incident current = incidents.get(i);
+            if (current.getStatus() == IncidentStatus.IN_PROGRESS && current.getAssignedVehicle() == vehicle) {
+                return current;
+            }
+        }
+        return null;
+    }
 }

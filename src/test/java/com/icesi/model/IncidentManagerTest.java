@@ -226,4 +226,68 @@ class IncidentManagerTest {
                 () -> manager.finishAttention(incident1));
         assertEquals(VehicleStatus.AVAILABLE, ambulance1.getStatus());
     }
+
+    // RF6
+    // Caso 1: Liberar un vehículo que atiende un incidente "En proceso" lo deja disponible y el incidente vuelve a quedar pendiente.
+    @Test
+    void releaseVehicleOfInProgressIncidentMakesItAvailableAndIncidentPending() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.THEFT, "Zona Norte", Severity.MEDIUM);
+        Vehicle patrol1 = new Vehicle("VEH001", VehicleType.PATROL);
+        manager.registerIncident(incident1);
+        manager.assignVehicle(patrol1, incident1);
+
+        // Act
+        manager.releaseVehicle(patrol1);
+
+        // Assert
+        assertEquals(VehicleStatus.AVAILABLE, patrol1.getStatus());
+        assertEquals(IncidentStatus.PENDING, incident1.getStatus());
+        assertNull(incident1.getAssignedVehicle());
+    }
+
+    // Caso 2: Después de liberar un vehículo, el incidente puede recibir otro vehículo compatible.
+    @Test
+    void releasedIncidentCanReceiveAnotherVehicle() {
+        // Arrange
+        Incident incident1 = new Incident("INC001", IncidentType.ACCIDENT, "Zona Norte", Severity.HIGH);
+        Vehicle patrol1 = new Vehicle("VEH001", VehicleType.PATROL);
+        Vehicle ambulance1 = new Vehicle("VEH002", VehicleType.AMBULANCE);
+        manager.registerIncident(incident1);
+        manager.assignVehicle(patrol1, incident1);
+        manager.releaseVehicle(patrol1);
+
+        // Act
+        manager.assignVehicle(ambulance1, incident1);
+
+        // Assert
+        assertEquals(IncidentStatus.IN_PROGRESS, incident1.getStatus());
+        assertEquals(ambulance1, incident1.getAssignedVehicle());
+        assertEquals(VehicleStatus.AVAILABLE, patrol1.getStatus());
+    }
+
+    // Caso 3: Liberar un vehículo que ya está "Disponible" lanza una excepción.
+    @Test
+    void releaseAvailableVehicleThrowsException() {
+        // Arrange
+        Vehicle ambulance1 = new Vehicle("VEH001", VehicleType.AMBULANCE);
+
+        // Act & Assert
+        assertThrows(VehicleReleaseException.class,
+                () -> manager.releaseVehicle(ambulance1));
+        assertEquals(VehicleStatus.AVAILABLE, ambulance1.getStatus());
+    }
+
+    // Caso 4: Liberar un vehículo que no está atendiendo ningún incidente lanza una excepción y no cambia su estado.
+    @Test
+    void releaseVehicleWithoutIncidentThrowsExceptionAndKeepsStatus() {
+        // Arrange
+        Vehicle fireTruck1 = new Vehicle("VEH001", VehicleType.FIRE_TRUCK);
+        fireTruck1.setStatus(VehicleStatus.OUT_OF_SERVICE);
+
+        // Act & Assert
+        assertThrows(VehicleReleaseException.class,
+                () -> manager.releaseVehicle(fireTruck1));
+        assertEquals(VehicleStatus.OUT_OF_SERVICE, fireTruck1.getStatus());
+    }
 }
