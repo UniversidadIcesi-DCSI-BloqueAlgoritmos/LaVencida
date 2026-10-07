@@ -23,6 +23,38 @@ public class LinkedList<T> {
         size++;
     }
 
+    public void addFirst(T value) {
+        Node<T> newNode = new Node<>(value);
+        if (isEmpty()) {
+            tail = newNode;
+        } else {
+            newNode.setNext(head);
+        }
+        head = newNode;
+        size++;
+    }
+
+    public T getFirst() {
+        if (isEmpty()) {
+            throw new EmptyStructureException("La lista esta vacia");
+        }
+        return head.getValue();
+    }
+
+    public T removeFirst() {
+        if (isEmpty()) {
+            throw new EmptyStructureException("La lista esta vacia");
+        }
+        T value = head.getValue();
+        head = head.getNext();
+        size--;
+        // si quedo vacia la cola tampoco apunta a nada
+        if (isEmpty()) {
+            tail = null;
+        }
+        return value;
+    }
+
     public T get(int index) {
         Node<T> current = head;
         for (int i = 0; i < index; i++) {
