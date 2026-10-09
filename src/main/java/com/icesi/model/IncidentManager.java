@@ -8,6 +8,7 @@ import com.icesi.exceptions.VehicleAssignmentException;
 import com.icesi.exceptions.VehicleReleaseException;
 import com.icesi.structures.LinkedList;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 public class IncidentManager {
@@ -131,12 +132,41 @@ public class IncidentManager {
 
     // Calcula el puntaje obtenido por resolver un incidente considerando su gravedad y tiempo de atencion.
     public int calculateScore(Incident incident, LocalDateTime resolvedAt) {
-        return 0;
+        if (incident == null) {
+            throw new IllegalArgumentException("El incidente no puede ser nulo");
+        }
+        int basePoints;
+        long maxDuration;
+        if (incident.getSeverity() == Severity.HIGH) {
+            basePoints = HIGH_SEVERITY_POINTS;
+            maxDuration = HIGH_MAX_DURATION_SECONDS;
+        } else if (incident.getSeverity() == Severity.MEDIUM) {
+            basePoints = MEDIUM_SEVERITY_POINTS;
+            maxDuration = MEDIUM_MAX_DURATION_SECONDS;
+        } else {
+            basePoints = LOW_SEVERITY_POINTS;
+            maxDuration = LOW_MAX_DURATION_SECONDS;
+        }
+
+        int bonus = 0;
+        if (incident.getGeneratedAt() != null && resolvedAt != null) {
+            long elapsedSeconds = Duration.between(incident.getGeneratedAt(), resolvedAt).getSeconds();
+            if (elapsedSeconds >= 0 && elapsedSeconds <= maxDuration) {
+                bonus = TIME_BONUS_POINTS;
+            }
+        }
+        return basePoints + bonus;
     }
 
     // Finaliza la atencion de un incidente, registra la hora de resolucion y actualiza el puntaje del operador.
     public int finishAttention(Incident incident, Operator operator, LocalDateTime resolvedAt) {
-        return 0;
+        finishAttention(incident);
+        incident.setResolvedAt(resolvedAt);
+        int points = calculateScore(incident, resolvedAt);
+        if (operator != null) {
+            operator.addScore(points);
+        }
+        return points;
     }
 
     // Finaliza la atencion de un incidente en la hora actual y actualiza el puntaje del operador.
