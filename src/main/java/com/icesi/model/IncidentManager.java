@@ -8,6 +8,8 @@ import com.icesi.exceptions.VehicleAssignmentException;
 import com.icesi.exceptions.VehicleReleaseException;
 import com.icesi.structures.LinkedList;
 
+import java.time.LocalDateTime;
+
 public class IncidentManager {
 
     private LinkedList<Incident> incidents;
@@ -108,6 +110,15 @@ public class IncidentManager {
         return false;
     }
 
+    public static final int HIGH_SEVERITY_POINTS = 100;
+    public static final int MEDIUM_SEVERITY_POINTS = 70;
+    public static final int LOW_SEVERITY_POINTS = 40;
+    public static final int TIME_BONUS_POINTS = 20;
+
+    public static final long HIGH_MAX_DURATION_SECONDS = 300;   // 5 min
+    public static final long MEDIUM_MAX_DURATION_SECONDS = 600;  // 10 min
+    public static final long LOW_MAX_DURATION_SECONDS = 900;     // 15 min
+
     // Finaliza la atencion de un incidente en proceso: queda RESOLVED y su vehiculo vuelve a estar AVAILABLE; lanza IncidentStateException si no esta IN_PROGRESS.
     public void finishAttention(Incident incident) {
         if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
@@ -116,6 +127,21 @@ public class IncidentManager {
         incident.setStatus(IncidentStatus.RESOLVED);
         Vehicle vehicle = incident.getAssignedVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
+    }
+
+    // Calcula el puntaje obtenido por resolver un incidente considerando su gravedad y tiempo de atencion.
+    public int calculateScore(Incident incident, LocalDateTime resolvedAt) {
+        return 0;
+    }
+
+    // Finaliza la atencion de un incidente, registra la hora de resolucion y actualiza el puntaje del operador.
+    public int finishAttention(Incident incident, Operator operator, LocalDateTime resolvedAt) {
+        return 0;
+    }
+
+    // Finaliza la atencion de un incidente en la hora actual y actualiza el puntaje del operador.
+    public int finishAttention(Incident incident, Operator operator) {
+        return finishAttention(incident, operator, LocalDateTime.now());
     }
 
     // Libera un vehiculo que esta atendiendo un incidente: el vehiculo queda AVAILABLE y el incidente vuelve a PENDING; lanza IllegalArgumentException si es nulo y VehicleReleaseException si ya esta disponible o no atiende ningun incidente.

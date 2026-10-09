@@ -10,16 +10,21 @@ public class Incident {
     private Severity severity;
     private IncidentStatus status;
     private LocalDateTime generatedAt;
+    private LocalDateTime resolvedAt;
     private String description;
     private Vehicle assignedVehicle;
 
     public Incident(String id, IncidentType type, String location, Severity severity) {
+        this(id, type, location, severity, LocalDateTime.now());
+    }
+
+    public Incident(String id, IncidentType type, String location, Severity severity, LocalDateTime generatedAt) {
         this.id = id;
         this.type = type;
         this.location = location;
         this.severity = severity;
         this.status = IncidentStatus.PENDING;
-        this.generatedAt = LocalDateTime.now();
+        this.generatedAt = generatedAt;
     }
 
     public String getId() {
@@ -50,6 +55,14 @@ public class Incident {
     public LocalDateTime getGeneratedAt() {
 
         return generatedAt;
+    }
+
+    public LocalDateTime getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(LocalDateTime resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 
     public String getDescription() {
