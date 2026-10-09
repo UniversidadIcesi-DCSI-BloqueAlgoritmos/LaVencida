@@ -10,6 +10,8 @@ import com.icesi.structures.LinkedList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class IncidentManagerTest {
@@ -368,5 +370,86 @@ class IncidentManagerTest {
         // Act & Assert
         assertThrows(IncidentNotFoundException.class,
                 () -> manager.findIncidentById("INC999"));
+    }
+
+    // RF14 - Sistema de puntuacion del operador
+    // Caso 1: calculateScore otorga el puntaje base segun la gravedad (100 alta, 70 media, 40 baja).
+    @Test
+    void calculateScoreReturnsBasePointsAccordingToSeverity() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
+        LocalDateTime resolvedLate = base.plusMinutes(20);
+
+        Incident high = new Incident("I-H", IncidentType.ACCIDENT, "Centro", Severity.HIGH, base);
+        Incident med = new Incident("I-M", IncidentType.THEFT, "Norte", Severity.MEDIUM, base);
+        Incident low = new Incident("I-L", IncidentType.FIRE, "Sur", Severity.LOW, base);
+
+        assertEquals(100, manager.calculateScore(high, resolvedLate));
+        assertEquals(70, manager.calculateScore(med, resolvedLate));
+        assertEquals(40, manager.calculateScore(low, resolvedLate));
+    }
+
+    // Caso 2: calculateScore suma bonificacion de 20 puntos si se atiende dentro del tiempo limite.
+    @Test
+    void calculateScoreIncludesBonusWhenWithinTimeLimit() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
+        LocalDateTime resolvedOnTime = base.plusMinutes(2); // dentro de los 5 min de HIGH
+
+        Incident high = new Incident("I-H", IncidentType.ACCIDENT, "Centro", Severity.HIGH, base);
+
+        assertEquals(120, manager.calculateScore(high, resolvedOnTime));
+    }
+
+    // Caso 3: calculateScore no suma bonificacion si se supera el tiempo limite.
+    @Test
+    void calculateScoreExcludesBonusWhenExceedingTimeLimit() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
+        LocalDateTime resolvedLate = base.plusMinutes(6); // supera los 5 min de HIGH
+
+        Incident high = new Incident("I-H", IncidentType.ACCIDENT, "Centro", Severity.HIGH, base);
+
+        assertEquals(100, manager.calculateScore(high, resolvedLate));
+    }
+
+    // Caso 4: finishAttention con Operador calcula puntos y actualiza el puntaje del operador.
+    @Test
+    void finishAttentionWithOperatorUpdatesScore() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
+        LocalDateTime resolved = base.plusMinutes(2);
+
+        Incident incident = new Incident("I-01", IncidentType.THEFT, "Centro", Severity.MEDIUM, base);
+        Vehicle vehicle = new Vehicle("V-01", VehicleType.PATROL);
+        Operator operator = new Operator(0, 0);
+
+        manager.registerIncident(incident);
+        manager.assignVehicle(vehicle, incident);
+
+        int points = manager.finishAttention(incident, operator, resolved);
+
+        assertEquals(90, points); // 70 base + 20 bonificacion
+        assertEquals(90, operator.getScore());
+        assertEquals(IncidentStatus.RESOLVED, incident.getStatus());
+        assertEquals(VehicleStatus.AVAILABLE, vehicle.getStatus());
+        assertEquals(resolved, incident.getResolvedAt());
+    }
+
+    // Caso 5: finishAttention con Operador acumula el puntaje tras resolver multiples incidentes.
+    @Test
+    void finishAttentionAccumulatesScoreForMultipleIncidents() {
+        LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
+        Operator operator = new Operator(0, 0);
+
+        Incident incident1 = new Incident("I-01", IncidentType.THEFT, "Centro", Severity.HIGH, base);
+        Vehicle vehicle1 = new Vehicle("V-01", VehicleType.PATROL);
+        manager.registerIncident(incident1);
+        manager.assignVehicle(vehicle1, incident1);
+        manager.finishAttention(incident1, operator, base.plusMinutes(2)); // 100 + 20 = 120
+
+        Incident incident2 = new Incident("I-02", IncidentType.ACCIDENT, "Sur", Severity.LOW, base);
+        Vehicle vehicle2 = new Vehicle("V-02", VehicleType.AMBULANCE);
+        manager.registerIncident(incident2);
+        manager.assignVehicle(vehicle2, incident2);
+        manager.finishAttention(incident2, operator, base.plusMinutes(20)); // 40 base (sin bono)
+
+        assertEquals(160, operator.getScore());
     }
 }
