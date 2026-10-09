@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -161,5 +163,70 @@ class LinkedListTest {
 
         // Assert
         assertEquals(-1, index);
+    }
+
+    // Iterator - Caso 1: Recorrer una lista con varios elementos los entrega en el orden en que fueron agregados.
+    @Test
+    void iteratorReturnsElementsInInsertionOrder() {
+        // Arrange
+        LinkedList<String> letters = new LinkedList<>();
+        letters.addLast("A");
+        letters.addLast("B");
+        letters.addLast("C");
+
+        // Act
+        Iterator<String> iterator = letters.iterator();
+
+        // Assert
+        assertTrue(iterator.hasNext());
+        assertEquals("A", iterator.next());
+        assertEquals("B", iterator.next());
+        assertEquals("C", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    // Iterator - Caso 2: Iterar una lista vacía indica que no hay elementos.
+    @Test
+    void iteratorOfEmptyListHasNoElements() {
+        // Arrange
+        LinkedList<String> emptyList = new LinkedList<>();
+
+        // Act
+        Iterator<String> iterator = emptyList.iterator();
+
+        // Assert
+        assertFalse(iterator.hasNext());
+    }
+
+    // Iterator - Caso 3: Pedir el siguiente elemento cuando ya no quedan más lanza una excepción.
+    @Test
+    void iteratorNextWithoutMoreElementsThrowsException() {
+        // Arrange
+        LinkedList<String> letters = new LinkedList<>();
+        letters.addLast("A");
+        Iterator<String> iterator = letters.iterator();
+        iterator.next();
+
+        // Act & Assert
+        assertThrows(NoSuchElementException.class,
+                () -> iterator.next());
+    }
+
+    // Iterator - Caso 4: Recorrer la lista con un ciclo for-each visita todos los elementos.
+    @Test
+    void forEachVisitsAllElements() {
+        // Arrange
+        list.addLast(1);
+        list.addLast(2);
+        list.addLast(3);
+        int sum = 0;
+
+        // Act
+        for (int value : list) {
+            sum += value;
+        }
+
+        // Assert
+        assertEquals(6, sum);
     }
 }

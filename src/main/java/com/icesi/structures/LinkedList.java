@@ -3,19 +3,23 @@ package com.icesi.structures;
 import com.icesi.exceptions.EmptyStructureException;
 
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public class LinkedList<T> {
+public class LinkedList<T> implements Iterable<T> {
 
     private Node<T> head;
     private Node<T> tail;
     private int size;
 
+    // Crea una lista vacia: sin nodos y con tamano 0.
     public LinkedList() {
         this.head = null;
         this.tail = null;
         this.size = 0;
     }
 
+    // Agrega un elemento al final de la lista.
     public void addLast(T value) {
         Node<T> newNode = new Node<>(value);
         if (isEmpty()) {
@@ -27,6 +31,7 @@ public class LinkedList<T> {
         size++;
     }
 
+    // Agrega un elemento al inicio de la lista.
     public void addFirst(T value) {
         Node<T> newNode = new Node<>(value);
         if (isEmpty()) {
@@ -38,6 +43,7 @@ public class LinkedList<T> {
         size++;
     }
 
+    // Devuelve el primer elemento sin quitarlo; lanza EmptyStructureException si la lista esta vacia.
     public T getFirst() {
         if (isEmpty()) {
             throw new EmptyStructureException("La lista esta vacia");
@@ -45,6 +51,7 @@ public class LinkedList<T> {
         return head.getValue();
     }
 
+    // Quita y devuelve el primer elemento; lanza EmptyStructureException si la lista esta vacia.
     public T removeFirst() {
         if (isEmpty()) {
             throw new EmptyStructureException("La lista esta vacia");
@@ -59,6 +66,7 @@ public class LinkedList<T> {
         return value;
     }
 
+    // Devuelve el elemento que esta en la posicion indicada, recorriendo desde la cabeza.
     public T get(int index) {
         Node<T> current = head;
         for (int i = 0; i < index; i++) {
@@ -67,14 +75,23 @@ public class LinkedList<T> {
         return current.getValue();
     }
 
+    // Devuelve un iterador para recorrer la lista de la cabeza a la cola.
+    @Override
+    public Iterator<T> iterator() {
+        return new LinkedListIterator();
+    }
+
+    // Devuelve la cantidad de elementos de la lista.
     public int size() {
         return size;
     }
 
+    // Indica si la lista no tiene elementos.
     public boolean isEmpty() {
         return size == 0;
     }
 
+    // Quita y devuelve el elemento de la posicion indicada; lanza IndexOutOfBoundsException si el indice no es valido.
     public T remove(int index) {
         if (index < 0 || index >= size) {
             throw new IndexOutOfBoundsException("Indice fuera de rango: " + index);
@@ -98,6 +115,7 @@ public class LinkedList<T> {
         return removed.getValue();
     }
 
+    // Indica si el valor esta en la lista, comparandolo con equals.
     public boolean contains(T value) {
         Node<T> current = head;
         while (current != null) {
@@ -173,5 +191,28 @@ public class LinkedList<T> {
             }
         }
         return -1;
+    }
+
+    // Iterador interno: guarda el nodo por el que va y avanza un nodo cada vez que se pide el siguiente elemento.
+    private class LinkedListIterator implements Iterator<T> {
+
+        private Node<T> current = head;
+
+        // Indica si todavia quedan elementos por recorrer.
+        @Override
+        public boolean hasNext() {
+            return current != null;
+        }
+
+        // Devuelve el elemento actual y avanza al siguiente; lanza NoSuchElementException si ya no quedan elementos.
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No hay mas elementos");
+            }
+            T value = current.getValue();
+            current = current.getNext();
+            return value;
+        }
     }
 }

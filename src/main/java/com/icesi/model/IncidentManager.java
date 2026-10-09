@@ -12,10 +12,12 @@ public class IncidentManager {
 
     private LinkedList<Incident> incidents;
 
+    // Crea el gestor con la lista de incidentes vacia.
     public IncidentManager() {
         this.incidents = new LinkedList<>();
     }
 
+    // Registra un incidente al final de la lista; lanza IllegalArgumentException si es nulo y DuplicateIncidentException si ya existe uno con el mismo id.
     public void registerIncident(Incident incident) {
         if (incident == null) {
             throw new IllegalArgumentException("El incidente no puede ser nulo");
@@ -26,23 +28,27 @@ public class IncidentManager {
         incidents.addLast(incident);
     }
 
+    // Indica si ya hay un incidente registrado con ese id.
     private boolean existsIncidentWithId(String id) {
-        for (int i = 0; i < incidents.size(); i++) {
-            if (incidents.get(i).getId().equals(id)) {
+        for (Incident current : incidents) {
+            if (current.getId().equals(id)) {
                 return true;
             }
         }
         return false;
     }
 
+    // Devuelve la cantidad de incidentes registrados.
     public int getIncidentCount() {
         return incidents.size();
     }
 
+    // Devuelve el incidente que esta en la posicion indicada (en orden de registro).
     public Incident getIncidentAt(int index) {
         return incidents.get(index);
     }
 
+    // Devuelve el incidente de mayor prioridad (gravedad HIGH, MEDIUM, LOW; si empatan, el mas antiguo); lanza NoActiveIncidentsException si no hay incidentes.
     public Incident getHighestPriorityIncident() {
         if (incidents.isEmpty()) {
             throw new NoActiveIncidentsException("No hay incidentes activos registrados");
@@ -58,6 +64,7 @@ public class IncidentManager {
         return best;
     }
 
+    // Indica si el candidato tiene mas prioridad que el actual: primero por gravedad y, si es igual, por antiguedad.
     private boolean isHigherPriority(Incident candidate, Incident current) {
         int severityComparison = candidate.getSeverity().ordinal() - current.getSeverity().ordinal();
         if (severityComparison < 0) {
@@ -70,6 +77,7 @@ public class IncidentManager {
         return candidate.getGeneratedAt().isBefore(current.getGeneratedAt());
     }
 
+    // Asigna un vehiculo a un incidente pendiente; lanza VehicleAssignmentException si el incidente no esta pendiente, el vehiculo no esta disponible o no es compatible. El incidente pasa a IN_PROGRESS y el vehiculo a EN_ROUTE.
     public void assignVehicle(Vehicle vehicle, Incident incident) {
         if (incident.getStatus() != IncidentStatus.PENDING) {
             throw new VehicleAssignmentException("El incidente no esta pendiente de asignacion");
@@ -86,6 +94,7 @@ public class IncidentManager {
         vehicle.setStatus(VehicleStatus.EN_ROUTE);
     }
 
+    // Indica si el tipo de vehiculo puede atender el tipo de incidente (patrulla: robo y accidente; ambulancia: accidente; camion de bomberos: incendio).
     private boolean isCompatible(VehicleType vehicleType, IncidentType incidentType) {
         if (vehicleType == VehicleType.PATROL) {
             return incidentType == IncidentType.THEFT || incidentType == IncidentType.ACCIDENT;
@@ -99,6 +108,7 @@ public class IncidentManager {
         return false;
     }
 
+    // Finaliza la atencion de un incidente en proceso: queda RESOLVED y su vehiculo vuelve a estar AVAILABLE; lanza IncidentStateException si no esta IN_PROGRESS.
     public void finishAttention(Incident incident) {
         if (incident.getStatus() != IncidentStatus.IN_PROGRESS) {
             throw new IncidentStateException("El incidente no esta en proceso de atencion");
@@ -108,6 +118,7 @@ public class IncidentManager {
         vehicle.setStatus(VehicleStatus.AVAILABLE);
     }
 
+    // Libera un vehiculo que esta atendiendo un incidente: el vehiculo queda AVAILABLE y el incidente vuelve a PENDING; lanza IllegalArgumentException si es nulo y VehicleReleaseException si ya esta disponible o no atiende ningun incidente.
     public void releaseVehicle(Vehicle vehicle) {
         if (vehicle == null) {
             throw new IllegalArgumentException("El vehiculo no puede ser nulo");
@@ -128,9 +139,9 @@ public class IncidentManager {
         vehicle.setStatus(VehicleStatus.AVAILABLE);
     }
 
+    // Busca el incidente en proceso que tiene asignado el vehiculo; devuelve null si no hay ninguno.
     private Incident findInProgressIncidentOf(Vehicle vehicle) {
-        for (int i = 0; i < incidents.size(); i++) {
-            Incident current = incidents.get(i);
+        for (Incident current : incidents) {
             if (current.getStatus() == IncidentStatus.IN_PROGRESS && current.getAssignedVehicle() == vehicle) {
                 return current;
             }
@@ -138,6 +149,7 @@ public class IncidentManager {
         return null;
     }
 
+    // Devuelve una copia de los incidentes ordenada por prioridad, sin cambiar el orden de registro original.
     public LinkedList<Incident> getIncidentsSortedByPriority() {
         // ordenamos una copia para no cambiar el orden de registro original
         LinkedList<Incident> sorted = copyIncidents();
@@ -145,6 +157,7 @@ public class IncidentManager {
         return sorted;
     }
 
+    // Busca un incidente por id con busqueda binaria sobre una copia ordenada por id; lanza IncidentNotFoundException si no existe.
     public Incident findIncidentById(String id) {
         IncidentIdComparator comparator = new IncidentIdComparator();
         LinkedList<Incident> sortedById = copyIncidents();
@@ -159,10 +172,11 @@ public class IncidentManager {
         return sortedById.get(index);
     }
 
+    // Devuelve una copia de la lista de incidentes (los mismos incidentes en una lista nueva).
     private LinkedList<Incident> copyIncidents() {
         LinkedList<Incident> copy = new LinkedList<>();
-        for (int i = 0; i < incidents.size(); i++) {
-            copy.addLast(incidents.get(i));
+        for (Incident current : incidents) {
+            copy.addLast(current);
         }
         return copy;
     }
