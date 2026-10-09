@@ -4,6 +4,7 @@ import com.icesi.exceptions.EmptyStructureException;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class LinkedList<T> implements Iterable<T> {
 
@@ -11,7 +12,7 @@ public class LinkedList<T> implements Iterable<T> {
     private Node<T> tail;
     private int size;
 
-    // Crea una lista vacia: sin nodos y con tamaño 0.
+    // Crea una lista vacia: sin nodos y con tamano 0.
     public LinkedList() {
         this.head = null;
         this.tail = null;
@@ -74,10 +75,10 @@ public class LinkedList<T> implements Iterable<T> {
         return current.getValue();
     }
 
-    // Devuelve un iterador para recorrer la lista de la cabeza a la cola (esqueleto: aun no esta implementado).
+    // Devuelve un iterador para recorrer la lista de la cabeza a la cola.
     @Override
     public Iterator<T> iterator() {
-        return null;
+        return new LinkedListIterator();
     }
 
     // Devuelve la cantidad de elementos de la lista.
@@ -190,5 +191,28 @@ public class LinkedList<T> implements Iterable<T> {
             }
         }
         return -1;
+    }
+
+    // Iterador interno: guarda el nodo por el que va y avanza un nodo cada vez que se pide el siguiente elemento.
+    private class LinkedListIterator implements Iterator<T> {
+
+        private Node<T> current = head;
+
+        // Indica si todavia quedan elementos por recorrer.
+        @Override
+        public boolean hasNext() {
+            return current != null;
+        }
+
+        // Devuelve el elemento actual y avanza al siguiente; lanza NoSuchElementException si ya no quedan elementos.
+        @Override
+        public T next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException("No hay mas elementos");
+            }
+            T value = current.getValue();
+            current = current.getNext();
+            return value;
+        }
     }
 }
