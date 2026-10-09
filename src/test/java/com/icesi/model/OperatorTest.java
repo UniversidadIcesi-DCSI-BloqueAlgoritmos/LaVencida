@@ -1,6 +1,6 @@
 package com.icesi.model;
 
-import com.icesi.structures.EmptyStructureException;
+import com.icesi.exceptions.EmptyStructureException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

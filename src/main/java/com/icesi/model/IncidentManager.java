@@ -1,5 +1,11 @@
 package com.icesi.model;
 
+import com.icesi.exceptions.DuplicateIncidentException;
+import com.icesi.exceptions.IncidentNotFoundException;
+import com.icesi.exceptions.IncidentStateException;
+import com.icesi.exceptions.NoActiveIncidentsException;
+import com.icesi.exceptions.VehicleAssignmentException;
+import com.icesi.exceptions.VehicleReleaseException;
 import com.icesi.structures.LinkedList;
 
 public class IncidentManager {

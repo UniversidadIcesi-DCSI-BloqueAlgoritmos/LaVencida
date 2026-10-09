@@ -1,5 +1,6 @@
 package com.icesi.structures;
 
+import com.icesi.exceptions.EmptyStructureException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,5 +1,7 @@
 package com.icesi.structures;
 
+import com.icesi.exceptions.EmptyStructureException;
+
 import java.util.Comparator;
 
 public class LinkedList<T> {

@@ -1,4 +1,4 @@
-package com.icesi.structures;
+package com.icesi.exceptions;
 
 public class EmptyStructureException extends RuntimeException {
 
