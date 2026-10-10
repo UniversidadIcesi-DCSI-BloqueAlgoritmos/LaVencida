@@ -95,6 +95,7 @@ public class IncidentManager {
         incident.setStatus(IncidentStatus.IN_PROGRESS);
         incident.setAssignedVehicle(vehicle);
         vehicle.setStatus(VehicleStatus.EN_ROUTE);
+        vehicle.setAssignedIncident(incident);
     }
 
     // Indica si el tipo de vehiculo puede atender el tipo de incidente (patrulla: robo y accidente; ambulancia: accidente; camion de bomberos: incendio).
@@ -159,6 +160,7 @@ public class IncidentManager {
         incident.setStatus(IncidentStatus.RESOLVED);
         Vehicle vehicle = incident.getAssignedVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setAssignedIncident(null);
     }
 
     // Calcula el puntaje obtenido por resolver un incidente considerando su gravedad y tiempo de atencion.
@@ -224,6 +226,7 @@ public class IncidentManager {
         incident.setAssignedVehicle(null);
         incident.setStatus(IncidentStatus.PENDING);
         vehicle.setStatus(VehicleStatus.AVAILABLE);
+        vehicle.setAssignedIncident(null);
     }
 
     // Busca el incidente en proceso que tiene asignado el vehiculo; devuelve null si no hay ninguno.
