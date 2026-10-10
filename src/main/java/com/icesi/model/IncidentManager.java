@@ -236,4 +236,29 @@ public class IncidentManager {
         }
         return copy;
     }
+
+    // RF13: Retorna la cantidad total de incidentes activos (PENDING o IN_PROGRESS).
+    public int getActiveIncidentCount() {
+        return 0;
+    }
+
+    // RF13: Retorna la cantidad de accidentes activos.
+    public int getActiveAccidentCount() {
+        return 0;
+    }
+
+    // RF13: Retorna la cantidad de robos activos.
+    public int getActiveTheftCount() {
+        return 0;
+    }
+
+    // RF13: Retorna la cantidad de incendios activos.
+    public int getActiveFireCount() {
+        return 0;
+    }
+
+    // RF13: Retorna la cantidad de vehiculos en estado AVAILABLE dentro de la lista proporcionada.
+    public int countAvailableVehicles(LinkedList<Vehicle> vehicles) {
+        return 0;
+    }
 }
