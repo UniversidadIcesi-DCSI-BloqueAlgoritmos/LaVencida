@@ -239,26 +239,51 @@ public class IncidentManager {
 
     // RF13: Retorna la cantidad total de incidentes activos (PENDING o IN_PROGRESS).
     public int getActiveIncidentCount() {
-        return 0;
+        int count = 0;
+        for (Incident current : incidents) {
+            if (current.getStatus() != IncidentStatus.RESOLVED) {
+                count++;
+            }
+        }
+        return count;
     }
 
     // RF13: Retorna la cantidad de accidentes activos.
     public int getActiveAccidentCount() {
-        return 0;
+        return countActiveByType(IncidentType.ACCIDENT);
     }
 
     // RF13: Retorna la cantidad de robos activos.
     public int getActiveTheftCount() {
-        return 0;
+        return countActiveByType(IncidentType.THEFT);
     }
 
     // RF13: Retorna la cantidad de incendios activos.
     public int getActiveFireCount() {
-        return 0;
+        return countActiveByType(IncidentType.FIRE);
+    }
+
+    private int countActiveByType(IncidentType type) {
+        int count = 0;
+        for (Incident current : incidents) {
+            if (current.getStatus() != IncidentStatus.RESOLVED && current.getType() == type) {
+                count++;
+            }
+        }
+        return count;
     }
 
     // RF13: Retorna la cantidad de vehiculos en estado AVAILABLE dentro de la lista proporcionada.
     public int countAvailableVehicles(LinkedList<Vehicle> vehicles) {
-        return 0;
+        if (vehicles == null) {
+            return 0;
+        }
+        int count = 0;
+        for (Vehicle vehicle : vehicles) {
+            if (vehicle.getStatus() == VehicleStatus.AVAILABLE) {
+                count++;
+            }
+        }
+        return count;
     }
 }
