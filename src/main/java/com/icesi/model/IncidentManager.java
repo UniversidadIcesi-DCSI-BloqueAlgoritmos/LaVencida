@@ -113,7 +113,33 @@ public class IncidentManager {
 
     // RF7: Propone un vehiculo candidato disponible y compatible para atender el incidente.
     public Vehicle proposeCandidateVehicle(Incident incident, LinkedList<Vehicle> vehicles) {
-        return null;
+        if (incident == null || vehicles == null) {
+            throw new IllegalArgumentException("El incidente y la lista de vehiculos no pueden ser nulos");
+        }
+        if (incident.getStatus() != IncidentStatus.PENDING) {
+            throw new VehicleAssignmentException("El incidente no esta pendiente de asignacion");
+        }
+
+        Vehicle backupPatrol = null;
+
+        for (Vehicle current : vehicles) {
+            if (current.getStatus() == VehicleStatus.AVAILABLE
+                    && isCompatible(current.getType(), incident.getType())) {
+                if (incident.getType() == IncidentType.ACCIDENT && current.getType() == VehicleType.PATROL) {
+                    if (backupPatrol == null) {
+                        backupPatrol = current;
+                    }
+                } else {
+                    return current;
+                }
+            }
+        }
+
+        if (backupPatrol != null) {
+            return backupPatrol;
+        }
+
+        throw new VehicleAssignmentException("No hay vehiculos compatibles disponibles");
     }
 
     public static final int HIGH_SEVERITY_POINTS = 100;
