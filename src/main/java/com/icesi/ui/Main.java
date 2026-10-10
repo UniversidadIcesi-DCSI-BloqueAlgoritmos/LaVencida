@@ -140,7 +140,7 @@ public class Main {
     // Pide el ID de un incidente y el de un vehiculo, y asigna el vehiculo al incidente.
     private static void assignVehicle() {
         Incident incident = manager.findIncidentById(readText("ID del incidente: "));
-        Vehicle vehicle = findVehicle(readText("ID del vehiculo: "));
+        Vehicle vehicle = askVehicle();
         manager.assignVehicle(vehicle, incident);
         System.out.println("Vehiculo " + vehicle.getId() + " asignado al incidente " + incident.getId() + ".");
     }
@@ -154,7 +154,7 @@ public class Main {
 
     // Pide el ID de un vehiculo y lo libera, devolviendo su incidente al estado PENDING.
     private static void releaseVehicle() {
-        Vehicle vehicle = findVehicle(readText("ID del vehiculo: "));
+        Vehicle vehicle = askVehicle();
         manager.releaseVehicle(vehicle);
         System.out.println("Vehiculo " + vehicle.getId() + " liberado. El incidente vuelve a PENDING.");
     }
@@ -269,6 +269,13 @@ public class Main {
             }
             System.out.println();
         }
+    }
+
+    // Muestra los vehiculos del sistema para que el usuario vea sus IDs y pide el ID de uno.
+    private static Vehicle askVehicle() {
+        System.out.println("Vehiculos disponibles en el sistema:");
+        showVehicles();
+        return findVehicle(readText("ID del vehiculo (por ejemplo P-01): "));
     }
 
     // Busca un vehiculo por ID en la lista; lanza IllegalArgumentException si no existe.
