@@ -509,4 +509,63 @@ class IncidentManagerTest {
 
         assertEquals(2, manager.countAvailableVehicles(fleet));
     }
+
+    // RF7 - Proponer vehiculo candidato adecuado
+    // Caso 1: Propone el vehiculo compatible disponible para un incendio o robo.
+    @Test
+    void proposeCandidateVehicleReturnsCompatibleAvailableVehicle() {
+        LinkedList<Vehicle> fleet = new LinkedList<>();
+        Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
+        Vehicle fireTruck = new Vehicle("F-01", VehicleType.FIRE_TRUCK);
+        fleet.addLast(patrol);
+        fleet.addLast(fireTruck);
+
+        Incident fire = new Incident("I-FIRE", IncidentType.FIRE, "Sur", Severity.HIGH);
+        Incident theft = new Incident("I-THEFT", IncidentType.THEFT, "Centro", Severity.MEDIUM);
+
+        assertEquals(fireTruck, manager.proposeCandidateVehicle(fire, fleet));
+        assertEquals(patrol, manager.proposeCandidateVehicle(theft, fleet));
+    }
+
+    // Caso 2: Para un accidente, prioriza una ambulancia disponible aunque haya una patrulla antes en la lista.
+    @Test
+    void proposeCandidateVehiclePrioritizesAmbulanceOverPatrolForAccident() {
+        LinkedList<Vehicle> fleet = new LinkedList<>();
+        Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
+        Vehicle ambulance = new Vehicle("A-01", VehicleType.AMBULANCE);
+        fleet.addLast(patrol);
+        fleet.addLast(ambulance);
+
+        Incident accident = new Incident("I-ACC", IncidentType.ACCIDENT, "Norte", Severity.HIGH);
+
+        assertEquals(ambulance, manager.proposeCandidateVehicle(accident, fleet));
+    }
+
+    // Caso 3: Para un accidente, si no hay ambulancia disponible propone una patrulla disponible como apoyo.
+    @Test
+    void proposeCandidateVehicleReturnsPatrolForAccidentWhenNoAmbulanceAvailable() {
+        LinkedList<Vehicle> fleet = new LinkedList<>();
+        Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
+        Vehicle ambulance = new Vehicle("A-01", VehicleType.AMBULANCE);
+        ambulance.setStatus(VehicleStatus.EN_ROUTE);
+        fleet.addLast(patrol);
+        fleet.addLast(ambulance);
+
+        Incident accident = new Incident("I-ACC", IncidentType.ACCIDENT, "Norte", Severity.HIGH);
+
+        assertEquals(patrol, manager.proposeCandidateVehicle(accident, fleet));
+    }
+
+    // Caso 4: Lanza VehicleAssignmentException si no hay ningun vehiculo compatible disponible.
+    @Test
+    void proposeCandidateVehicleThrowsExceptionWhenNoCompatibleAvailable() {
+        LinkedList<Vehicle> fleet = new LinkedList<>();
+        Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
+        fleet.addLast(patrol);
+
+        Incident fire = new Incident("I-FIRE", IncidentType.FIRE, "Sur", Severity.HIGH);
+
+        assertThrows(VehicleAssignmentException.class,
+                () -> manager.proposeCandidateVehicle(fire, fleet));
+    }
 }
