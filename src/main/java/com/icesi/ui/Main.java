@@ -18,15 +18,18 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final IncidentManager manager = new IncidentManager();
     private static final LinkedList<Vehicle> vehicles = new LinkedList<>();
-    private static final Operator operator = new Operator(0, 0);
+    private static final Operator operator = new Operator(4, 4);
+
+    // Tamano del mapa y codigos de cada celda, segun lo definido en la integradora
     private static final int MAP_SIZE = 64;
-    private static final int WALL = 0;
-    private static final int VEHICLE = 1;
-    private static final int ROAD = 2;
-    private static final int BUILDING = 3;
+    private static final int PATH = 0;
+    private static final int OBSTACLE = 1;
+    private static final int RESIDENTIAL = 2;
+    private static final int COMMERCIAL = 3;
+    private static final int MAIN_ROAD = 4;
     private static final int[][] map = new int[MAP_SIZE][MAP_SIZE];
 
-    // Punto de entrada: carga los vehiculos y repite el menu hasta que el usuario elija 0.
+    // Punto de entrada: carga los vehiculos y el mapa, y repite el menu hasta que el usuario elija 0.
     public static void main(String[] args) {
         loadVehicles();
         buildMap();
@@ -114,8 +117,10 @@ public class Main {
             System.out.println("No hay incidentes registrados.");
             return;
         }
-        for (int i = 0; i < sorted.size(); i++) {
-            System.out.println((i + 1) + ". " + describeIncident(sorted.get(i)));
+        int position = 1;
+        for (Incident incident : sorted) {
+            System.out.println(position + ". " + describeIncident(incident));
+            position++;
         }
     }
 
@@ -156,13 +161,12 @@ public class Main {
 
     // Muestra el ID, tipo y estado de cada vehiculo.
     private static void showVehicles() {
-        for (int i = 0; i < vehicles.size(); i++) {
-            Vehicle v = vehicles.get(i);
-            System.out.println(v.getId() + " | " + v.getType() + " | " + v.getStatus());
+        for (Vehicle vehicle : vehicles) {
+            System.out.println(vehicle.getId() + " | " + vehicle.getType() + " | " + vehicle.getStatus());
         }
     }
 
-    // Pide una direccion y mueve al operador en esa direccion, mostrando su nueva posicion.
+    // Pide una direccion y mueve al operador solo si la celda destino esta dentro del mapa y es transitable.
     private static void moveOperator() {
         System.out.println("1. Arriba  2. Abajo  3. Izquierda  4. Derecha");
         int option = readInt("Direccion: ");
@@ -179,6 +183,24 @@ public class Main {
             System.out.println("Direccion invalida.");
             return;
         }
+
+        // calculamos la celda a la que iria el operador antes de moverlo
+        int newRow = operator.getRow();
+        int newColumn = operator.getColumn();
+        if (direction == Direction.UP) {
+            newRow--;
+        } else if (direction == Direction.DOWN) {
+            newRow++;
+        } else if (direction == Direction.LEFT) {
+            newColumn--;
+        } else {
+            newColumn++;
+        }
+
+        if (!isWalkable(newRow, newColumn)) {
+            System.out.println("No se puede mover ahi: hay un obstaculo, una zona no transitable o el limite del mapa.");
+            return;
+        }
         operator.move(direction);
         System.out.println("Operador en (" + operator.getRow() + ", " + operator.getColumn() + ").");
     }
@@ -190,30 +212,60 @@ public class Main {
                 + ". Operador en (" + operator.getRow() + ", " + operator.getColumn() + ").");
     }
 
-    // Construye el mapa: paredes en el borde, una calle cada 8 celdas, edificios en el resto y vehiculos sobre las calles.
+    // Indica si una celda esta dentro del mapa y se puede transitar: solo los caminos (0) y las vias principales (4).
+    private static boolean isWalkable(int row, int column) {
+        if (row < 0 || row >= MAP_SIZE || column < 0 || column >= MAP_SIZE) {
+            return false;
+        }
+        return map[row][column] == PATH || map[row][column] == MAIN_ROAD;
+    }
+
+    // Construye el mapa: obstaculos en el borde, vias principales cada 16 celdas, caminos cada 4, zonas residenciales y comerciales en las manzanas, y algunos obstaculos.
     private static void buildMap() {
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
                 if (i == 0 || j == 0 || i == MAP_SIZE - 1 || j == MAP_SIZE - 1) {
-                    map[i][j] = WALL;
-                } else if (i % 8 == 4 || j % 8 == 4) {
-                    map[i][j] = ROAD;
+                    map[i][j] = OBSTACLE;
+                } else if (i % 16 == 8 || j % 16 == 8) {
+                    map[i][j] = MAIN_ROAD;
+                } else if (i % 4 == 0 || j % 4 == 0) {
+                    map[i][j] = PATH;
+                } else if ((i / 4 + j / 4) % 3 == 0) {
+                    map[i][j] = COMMERCIAL;
                 } else {
-                    map[i][j] = BUILDING;
+                    map[i][j] = RESIDENTIAL;
                 }
             }
         }
-        map[4][4] = VEHICLE;
-        map[4][36] = VEHICLE;
-        map[36][20] = VEHICLE;
+
+        // obstaculos dentro de manzanas (3x3 celdas)
+        fillObstacle(17, 19, 17, 19);
+        fillObstacle(45, 47, 29, 31);
+
+        // obstaculos sobre caminos: obligan a buscar otra ruta
+        map[20][12] = OBSTACLE;
+        map[12][28] = OBSTACLE;
     }
 
-    // Imprime la matriz del mapa con numeros: 0 pared, 1 vehiculo, 2 carretera y 3 edificio.
+    // Marca como obstaculo todas las celdas de un rectangulo (limites incluidos).
+    private static void fillObstacle(int fromRow, int toRow, int fromColumn, int toColumn) {
+        for (int i = fromRow; i <= toRow; i++) {
+            for (int j = fromColumn; j <= toColumn; j++) {
+                map[i][j] = OBSTACLE;
+            }
+        }
+    }
+
+    // Imprime la matriz del mapa con los codigos de la integradora y marca con O la posicion del operador.
     private static void printMap() {
-        System.out.println("Mapa (0 = pared, 1 = vehiculo, 2 = carretera, 3 = edificio)");
+        System.out.println("Mapa (0 = camino disponible, 1 = obstaculo, 2 = zona residencial, 3 = zona comercial, 4 = via principal, O = operador)");
         for (int i = 0; i < MAP_SIZE; i++) {
             for (int j = 0; j < MAP_SIZE; j++) {
-                System.out.print(map[i][j] + " ");
+                if (i == operator.getRow() && j == operator.getColumn()) {
+                    System.out.print("O ");
+                } else {
+                    System.out.print(map[i][j] + " ");
+                }
             }
             System.out.println();
         }
@@ -221,9 +273,9 @@ public class Main {
 
     // Busca un vehiculo por ID en la lista; lanza IllegalArgumentException si no existe.
     private static Vehicle findVehicle(String id) {
-        for (int i = 0; i < vehicles.size(); i++) {
-            if (vehicles.get(i).getId().equals(id)) {
-                return vehicles.get(i);
+        for (Vehicle vehicle : vehicles) {
+            if (vehicle.getId().equals(id)) {
+                return vehicle;
             }
         }
         throw new IllegalArgumentException("No existe un vehiculo con ID " + id);
