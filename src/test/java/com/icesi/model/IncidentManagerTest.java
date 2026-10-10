@@ -452,4 +452,61 @@ class IncidentManagerTest {
 
         assertEquals(160, operator.getScore());
     }
+
+    // RF13 - Indicadores en tiempo real
+    // Caso 1: getActiveIncidentCount cuenta solo incidentes en estado PENDING o IN_PROGRESS, ignorando los RESOLVED.
+    @Test
+    void getActiveIncidentCountCountsOnlyActiveOnes() {
+        Incident inc1 = new Incident("I-01", IncidentType.ACCIDENT, "Centro", Severity.HIGH);
+        Incident inc2 = new Incident("I-02", IncidentType.THEFT, "Norte", Severity.MEDIUM);
+        Incident inc3 = new Incident("I-03", IncidentType.FIRE, "Sur", Severity.LOW);
+        Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
+        Vehicle fireTruck = new Vehicle("F-01", VehicleType.FIRE_TRUCK);
+
+        manager.registerIncident(inc1);
+        manager.registerIncident(inc2);
+        manager.registerIncident(inc3);
+
+        manager.assignVehicle(patrol, inc2); // inc2 queda IN_PROGRESS
+        manager.assignVehicle(fireTruck, inc3);
+        manager.finishAttention(inc3); // inc3 queda RESOLVED
+
+        assertEquals(2, manager.getActiveIncidentCount());
+    }
+
+    // Caso 2: Los contadores por tipo separan correctamente accidentes, robos e incendios activos.
+    @Test
+    void getActiveCountsByTypeClassifyAccidentsTheftsAndFires() {
+        manager.registerIncident(new Incident("A-01", IncidentType.ACCIDENT, "Centro", Severity.HIGH));
+        manager.registerIncident(new Incident("A-02", IncidentType.ACCIDENT, "Norte", Severity.LOW));
+        manager.registerIncident(new Incident("T-01", IncidentType.THEFT, "Sur", Severity.MEDIUM));
+        Incident resolvedFire = new Incident("F-01", IncidentType.FIRE, "Oeste", Severity.HIGH);
+        Incident activeFire = new Incident("F-02", IncidentType.FIRE, "Este", Severity.MEDIUM);
+        manager.registerIncident(resolvedFire);
+        manager.registerIncident(activeFire);
+
+        Vehicle ft = new Vehicle("FT-1", VehicleType.FIRE_TRUCK);
+        manager.assignVehicle(ft, resolvedFire);
+        manager.finishAttention(resolvedFire); // F-01 resuelto, no debe contarse como activo
+
+        assertEquals(2, manager.getActiveAccidentCount());
+        assertEquals(1, manager.getActiveTheftCount());
+        assertEquals(1, manager.getActiveFireCount());
+    }
+
+    // Caso 3: countAvailableVehicles cuenta unicamente los vehiculos en estado AVAILABLE.
+    @Test
+    void countAvailableVehiclesCountsOnlyAvailableOnes() {
+        LinkedList<Vehicle> fleet = new LinkedList<>();
+        Vehicle v1 = new Vehicle("P-01", VehicleType.PATROL);
+        Vehicle v2 = new Vehicle("A-01", VehicleType.AMBULANCE);
+        Vehicle v3 = new Vehicle("F-01", VehicleType.FIRE_TRUCK);
+        v2.setStatus(VehicleStatus.EN_ROUTE);
+
+        fleet.addLast(v1);
+        fleet.addLast(v2);
+        fleet.addLast(v3);
+
+        assertEquals(2, manager.countAvailableVehicles(fleet));
+    }
 }
