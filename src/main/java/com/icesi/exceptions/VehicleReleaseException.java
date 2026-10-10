@@ -1,4 +1,4 @@
-package com.icesi.model;
+package com.icesi.exceptions;
 
 public class VehicleReleaseException extends RuntimeException {
 

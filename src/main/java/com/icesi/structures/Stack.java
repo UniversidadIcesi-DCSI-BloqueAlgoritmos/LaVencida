@@ -1,5 +1,7 @@
 package com.icesi.structures;
 
+import com.icesi.exceptions.EmptyStructureException;
+
 public class Stack<T> {
 
     // el tope de la pila es la cabeza de la lista, asi push y pop son O(1)

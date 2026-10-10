@@ -7,11 +7,21 @@ public class Operator {
     private int row;
     private int column;
     private Stack<Movement> movementHistory;
+    private int score;
 
     public Operator(int row, int column) {
         this.row = row;
         this.column = column;
         this.movementHistory = new Stack<>();
+        this.score = 0;
+    }
+
+    public int getScore() {
+        return score;
+    }
+
+    public void addScore(int points) {
+        this.score += points;
     }
 
     public int getRow() {

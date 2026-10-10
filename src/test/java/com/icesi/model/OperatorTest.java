@@ -1,6 +1,6 @@
 package com.icesi.model;
 
-import com.icesi.structures.EmptyStructureException;
+import com.icesi.exceptions.EmptyStructureException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,5 +73,23 @@ class OperatorTest {
                 () -> operator1.undoLastMovement());
         assertEquals(5, operator1.getRow());
         assertEquals(5, operator1.getColumn());
+    }
+
+    // RF14
+    // Caso 5: El puntaje inicial del operador debe ser cero.
+    @Test
+    void operatorInitialScoreIsZero() {
+        Operator operator1 = new Operator(0, 0);
+        assertEquals(0, operator1.getScore());
+    }
+
+    // RF14
+    // Caso 6: Agregar puntos incrementa el puntaje acumulado del operador.
+    @Test
+    void addScoreIncreasesOperatorScore() {
+        Operator operator1 = new Operator(0, 0);
+        operator1.addScore(100);
+        operator1.addScore(20);
+        assertEquals(120, operator1.getScore());
     }
 }
