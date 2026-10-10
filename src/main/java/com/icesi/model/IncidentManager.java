@@ -111,6 +111,11 @@ public class IncidentManager {
         return false;
     }
 
+    // RF7: Propone un vehiculo candidato disponible y compatible para atender el incidente.
+    public Vehicle proposeCandidateVehicle(Incident incident, LinkedList<Vehicle> vehicles) {
+        return null;
+    }
+
     public static final int HIGH_SEVERITY_POINTS = 100;
     public static final int MEDIUM_SEVERITY_POINTS = 70;
     public static final int LOW_SEVERITY_POINTS = 40;
