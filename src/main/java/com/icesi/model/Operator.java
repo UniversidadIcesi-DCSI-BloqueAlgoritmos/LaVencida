@@ -2,7 +2,9 @@ package com.icesi.model;
 
 import com.icesi.structures.Stack;
 
-public class Operator {
+import java.io.Serializable;
+
+public class Operator implements Serializable {
 
     private int row;
     private int column;

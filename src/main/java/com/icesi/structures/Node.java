@@ -1,6 +1,8 @@
 package com.icesi.structures;
 
-public class Node<T> {
+import java.io.Serializable;
+
+public class Node<T> implements Serializable {
 
     private T value;
     private Node<T> next;

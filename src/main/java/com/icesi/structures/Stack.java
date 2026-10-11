@@ -2,7 +2,9 @@ package com.icesi.structures;
 
 import com.icesi.exceptions.EmptyStructureException;
 
-public class Stack<T> {
+import java.io.Serializable;
+
+public class Stack<T> implements Serializable {
 
     // el tope de la pila es la cabeza de la lista, asi push y pop son O(1)
     private LinkedList<T> elements;
