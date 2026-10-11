@@ -18,8 +18,10 @@ class IncidentGeneratorTest {
     // Caso 1: Generar robo aleatorio crea un incidente de tipo THEFT en estado PENDING con ID valido.
     @Test
     void generateRandomTheftCreatesTheftIncident() {
+        // Act
         Incident theft = generator.generateRandomTheft();
 
+        // Assert
         assertNotNull(theft);
         assertEquals(IncidentType.THEFT, theft.getType());
         assertEquals(IncidentStatus.PENDING, theft.getStatus());
@@ -32,8 +34,10 @@ class IncidentGeneratorTest {
     // Caso 2: Generar incendio aleatorio crea un incidente de tipo FIRE en estado PENDING con ID valido.
     @Test
     void generateRandomFireCreatesFireIncident() {
+        // Act
         Incident fire = generator.generateRandomFire();
 
+        // Assert
         assertNotNull(fire);
         assertEquals(IncidentType.FIRE, fire.getType());
         assertEquals(IncidentStatus.PENDING, fire.getStatus());
@@ -46,8 +50,15 @@ class IncidentGeneratorTest {
     // Caso 3: Dos vehiculos distintos en la misma ubicacion disparan un accidente con gravedad HIGH.
     @Test
     void checkCollisionAccidentGeneratesAccidentWhenTwoVehiclesShareLocation() {
-        Incident accident = generator.checkCollisionAccident("P-01", "A-01", "Interseccion Calle 5 con Cra 10");
+        // Arrange
+        String vehicle1 = "P-01";
+        String vehicle2 = "A-01";
+        String location = "Interseccion Calle 5 con Cra 10";
 
+        // Act
+        Incident accident = generator.checkCollisionAccident(vehicle1, vehicle2, location);
+
+        // Assert
         assertNotNull(accident);
         assertEquals(IncidentType.ACCIDENT, accident.getType());
         assertEquals(Severity.HIGH, accident.getSeverity());
@@ -60,9 +71,11 @@ class IncidentGeneratorTest {
     // Caso 4: No se genera colision si los IDs de los vehiculos son iguales o nulos.
     @Test
     void checkCollisionAccidentReturnsNullWhenInvalidOrSameVehicle() {
+        // Act
         Incident same = generator.checkCollisionAccident("P-01", "P-01", "Calle 5");
         Incident nullOne = generator.checkCollisionAccident(null, "A-01", "Calle 5");
 
+        // Assert
         assertNull(same);
         assertNull(nullOne);
     }
@@ -71,8 +84,14 @@ class IncidentGeneratorTest {
     // Caso 5: Superar el umbral maximo de vehiculos en una zona genera un accidente de transito.
     @Test
     void checkCongestionAccidentGeneratesAccidentWhenThresholdExceeded() {
-        Incident accident = generator.checkCongestionAccident("Zona Comercial", 7);
+        // Arrange
+        String zone = "Zona Comercial";
+        int vehicleCount = 7;
 
+        // Act
+        Incident accident = generator.checkCongestionAccident(zone, vehicleCount);
+
+        // Assert
         assertNotNull(accident);
         assertEquals(IncidentType.ACCIDENT, accident.getType());
         assertEquals(Severity.MEDIUM, accident.getSeverity());
@@ -83,7 +102,14 @@ class IncidentGeneratorTest {
     // Caso 6: No se genera accidente si la cantidad de vehiculos esta dentro del limite permitido.
     @Test
     void checkCongestionAccidentReturnsNullWhenUnderThreshold() {
-        Incident accident = generator.checkCongestionAccident("Zona Comercial", 3);
+        // Arrange
+        String zone = "Zona Comercial";
+        int vehicleCount = 3;
+
+        // Act
+        Incident accident = generator.checkCongestionAccident(zone, vehicleCount);
+
+        // Assert
         assertNull(accident);
     }
 
@@ -91,8 +117,15 @@ class IncidentGeneratorTest {
     // Caso 7: Un vehiculo detenido durante ciclos que superan el umbral dispara un accidente.
     @Test
     void checkStoppedVehicleAccidentGeneratesAccidentWhenThresholdExceeded() {
-        Incident accident = generator.checkStoppedVehicleAccident("F-01", "Avenida Panamericana", 4);
+        // Arrange
+        String vehicleId = "F-01";
+        String location = "Avenida Panamericana";
+        int stoppedCycles = 4;
 
+        // Act
+        Incident accident = generator.checkStoppedVehicleAccident(vehicleId, location, stoppedCycles);
+
+        // Assert
         assertNotNull(accident);
         assertEquals(IncidentType.ACCIDENT, accident.getType());
         assertTrue(accident.getDescription().contains("F-01"));
@@ -102,17 +135,27 @@ class IncidentGeneratorTest {
     // Caso 8: No se genera accidente si el vehiculo ha estado detenido menos ciclos que el umbral.
     @Test
     void checkStoppedVehicleAccidentReturnsNullWhenUnderThreshold() {
-        Incident accident = generator.checkStoppedVehicleAccident("F-01", "Avenida Panamericana", 2);
+        // Arrange
+        String vehicleId = "F-01";
+        String location = "Avenida Panamericana";
+        int stoppedCycles = 2;
+
+        // Act
+        Incident accident = generator.checkStoppedVehicleAccident(vehicleId, location, stoppedCycles);
+
+        // Assert
         assertNull(accident);
     }
 
     // Caso 9: Multiples incidentes generados tienen IDs secuenciales y unicos.
     @Test
     void generatedIncidentsHaveUniqueSequentialIds() {
+        // Act
         Incident theft1 = generator.generateRandomTheft();
         Incident theft2 = generator.generateRandomTheft();
         Incident fire1 = generator.generateRandomFire();
 
+        // Assert
         assertNotEquals(theft1.getId(), theft2.getId());
         assertEquals("THEFT-001", theft1.getId());
         assertEquals("THEFT-002", theft2.getId());

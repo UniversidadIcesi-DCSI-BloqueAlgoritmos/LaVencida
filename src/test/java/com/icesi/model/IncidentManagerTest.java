@@ -376,6 +376,7 @@ class IncidentManagerTest {
     // Caso 1: calculateScore otorga el puntaje base segun la gravedad (100 alta, 70 media, 40 baja).
     @Test
     void calculateScoreReturnsBasePointsAccordingToSeverity() {
+        // Arrange
         LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
         LocalDateTime resolvedLate = base.plusMinutes(20);
 
@@ -383,36 +384,51 @@ class IncidentManagerTest {
         Incident med = new Incident("I-M", IncidentType.THEFT, "Norte", Severity.MEDIUM, base);
         Incident low = new Incident("I-L", IncidentType.FIRE, "Sur", Severity.LOW, base);
 
-        assertEquals(100, manager.calculateScore(high, resolvedLate));
-        assertEquals(70, manager.calculateScore(med, resolvedLate));
-        assertEquals(40, manager.calculateScore(low, resolvedLate));
+        // Act
+        int highScore = manager.calculateScore(high, resolvedLate);
+        int medScore = manager.calculateScore(med, resolvedLate);
+        int lowScore = manager.calculateScore(low, resolvedLate);
+
+        // Assert
+        assertEquals(100, highScore);
+        assertEquals(70, medScore);
+        assertEquals(40, lowScore);
     }
 
     // Caso 2: calculateScore suma bonificacion de 20 puntos si se atiende dentro del tiempo limite.
     @Test
     void calculateScoreIncludesBonusWhenWithinTimeLimit() {
+        // Arrange
         LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
         LocalDateTime resolvedOnTime = base.plusMinutes(2); // dentro de los 5 min de HIGH
-
         Incident high = new Incident("I-H", IncidentType.ACCIDENT, "Centro", Severity.HIGH, base);
 
-        assertEquals(120, manager.calculateScore(high, resolvedOnTime));
+        // Act
+        int score = manager.calculateScore(high, resolvedOnTime);
+
+        // Assert
+        assertEquals(120, score);
     }
 
     // Caso 3: calculateScore no suma bonificacion si se supera el tiempo limite.
     @Test
     void calculateScoreExcludesBonusWhenExceedingTimeLimit() {
+        // Arrange
         LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
         LocalDateTime resolvedLate = base.plusMinutes(6); // supera los 5 min de HIGH
-
         Incident high = new Incident("I-H", IncidentType.ACCIDENT, "Centro", Severity.HIGH, base);
 
-        assertEquals(100, manager.calculateScore(high, resolvedLate));
+        // Act
+        int score = manager.calculateScore(high, resolvedLate);
+
+        // Assert
+        assertEquals(100, score);
     }
 
     // Caso 4: finishAttention con Operador calcula puntos y actualiza el puntaje del operador.
     @Test
     void finishAttentionWithOperatorUpdatesScore() {
+        // Arrange
         LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
         LocalDateTime resolved = base.plusMinutes(2);
 
@@ -423,8 +439,10 @@ class IncidentManagerTest {
         manager.registerIncident(incident);
         manager.assignVehicle(vehicle, incident);
 
+        // Act
         int points = manager.finishAttention(incident, operator, resolved);
 
+        // Assert
         assertEquals(90, points); // 70 base + 20 bonificacion
         assertEquals(90, operator.getScore());
         assertEquals(IncidentStatus.RESOLVED, incident.getStatus());
@@ -435,6 +453,7 @@ class IncidentManagerTest {
     // Caso 5: finishAttention con Operador acumula el puntaje tras resolver multiples incidentes.
     @Test
     void finishAttentionAccumulatesScoreForMultipleIncidents() {
+        // Arrange
         LocalDateTime base = LocalDateTime.of(2026, 10, 9, 10, 0, 0);
         Operator operator = new Operator(0, 0);
 
@@ -442,14 +461,17 @@ class IncidentManagerTest {
         Vehicle vehicle1 = new Vehicle("V-01", VehicleType.PATROL);
         manager.registerIncident(incident1);
         manager.assignVehicle(vehicle1, incident1);
-        manager.finishAttention(incident1, operator, base.plusMinutes(2)); // 100 + 20 = 120
 
         Incident incident2 = new Incident("I-02", IncidentType.ACCIDENT, "Sur", Severity.LOW, base);
         Vehicle vehicle2 = new Vehicle("V-02", VehicleType.AMBULANCE);
         manager.registerIncident(incident2);
         manager.assignVehicle(vehicle2, incident2);
+
+        // Act
+        manager.finishAttention(incident1, operator, base.plusMinutes(2)); // 100 + 20 = 120
         manager.finishAttention(incident2, operator, base.plusMinutes(20)); // 40 base (sin bono)
 
+        // Assert
         assertEquals(160, operator.getScore());
     }
 
@@ -457,6 +479,7 @@ class IncidentManagerTest {
     // Caso 1: getActiveIncidentCount cuenta solo incidentes en estado PENDING o IN_PROGRESS, ignorando los RESOLVED.
     @Test
     void getActiveIncidentCountCountsOnlyActiveOnes() {
+        // Arrange
         Incident inc1 = new Incident("I-01", IncidentType.ACCIDENT, "Centro", Severity.HIGH);
         Incident inc2 = new Incident("I-02", IncidentType.THEFT, "Norte", Severity.MEDIUM);
         Incident inc3 = new Incident("I-03", IncidentType.FIRE, "Sur", Severity.LOW);
@@ -471,12 +494,17 @@ class IncidentManagerTest {
         manager.assignVehicle(fireTruck, inc3);
         manager.finishAttention(inc3); // inc3 queda RESOLVED
 
-        assertEquals(2, manager.getActiveIncidentCount());
+        // Act
+        int activeCount = manager.getActiveIncidentCount();
+
+        // Assert
+        assertEquals(2, activeCount);
     }
 
     // Caso 2: Los contadores por tipo separan correctamente accidentes, robos e incendios activos.
     @Test
     void getActiveCountsByTypeClassifyAccidentsTheftsAndFires() {
+        // Arrange
         manager.registerIncident(new Incident("A-01", IncidentType.ACCIDENT, "Centro", Severity.HIGH));
         manager.registerIncident(new Incident("A-02", IncidentType.ACCIDENT, "Norte", Severity.LOW));
         manager.registerIncident(new Incident("T-01", IncidentType.THEFT, "Sur", Severity.MEDIUM));
@@ -489,14 +517,21 @@ class IncidentManagerTest {
         manager.assignVehicle(ft, resolvedFire);
         manager.finishAttention(resolvedFire); // F-01 resuelto, no debe contarse como activo
 
-        assertEquals(2, manager.getActiveAccidentCount());
-        assertEquals(1, manager.getActiveTheftCount());
-        assertEquals(1, manager.getActiveFireCount());
+        // Act
+        int accidents = manager.getActiveAccidentCount();
+        int thefts = manager.getActiveTheftCount();
+        int fires = manager.getActiveFireCount();
+
+        // Assert
+        assertEquals(2, accidents);
+        assertEquals(1, thefts);
+        assertEquals(1, fires);
     }
 
     // Caso 3: countAvailableVehicles cuenta unicamente los vehiculos en estado AVAILABLE.
     @Test
     void countAvailableVehiclesCountsOnlyAvailableOnes() {
+        // Arrange
         LinkedList<Vehicle> fleet = new LinkedList<>();
         Vehicle v1 = new Vehicle("P-01", VehicleType.PATROL);
         Vehicle v2 = new Vehicle("A-01", VehicleType.AMBULANCE);
@@ -507,13 +542,18 @@ class IncidentManagerTest {
         fleet.addLast(v2);
         fleet.addLast(v3);
 
-        assertEquals(2, manager.countAvailableVehicles(fleet));
+        // Act
+        int available = manager.countAvailableVehicles(fleet);
+
+        // Assert
+        assertEquals(2, available);
     }
 
     // RF7 - Proponer vehiculo candidato adecuado
     // Caso 1: Propone el vehiculo compatible disponible para un incendio o robo.
     @Test
     void proposeCandidateVehicleReturnsCompatibleAvailableVehicle() {
+        // Arrange
         LinkedList<Vehicle> fleet = new LinkedList<>();
         Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
         Vehicle fireTruck = new Vehicle("F-01", VehicleType.FIRE_TRUCK);
@@ -523,13 +563,19 @@ class IncidentManagerTest {
         Incident fire = new Incident("I-FIRE", IncidentType.FIRE, "Sur", Severity.HIGH);
         Incident theft = new Incident("I-THEFT", IncidentType.THEFT, "Centro", Severity.MEDIUM);
 
-        assertEquals(fireTruck, manager.proposeCandidateVehicle(fire, fleet));
-        assertEquals(patrol, manager.proposeCandidateVehicle(theft, fleet));
+        // Act
+        Vehicle fireCandidate = manager.proposeCandidateVehicle(fire, fleet);
+        Vehicle theftCandidate = manager.proposeCandidateVehicle(theft, fleet);
+
+        // Assert
+        assertEquals(fireTruck, fireCandidate);
+        assertEquals(patrol, theftCandidate);
     }
 
     // Caso 2: Para un accidente, prioriza una ambulancia disponible aunque haya una patrulla antes en la lista.
     @Test
     void proposeCandidateVehiclePrioritizesAmbulanceOverPatrolForAccident() {
+        // Arrange
         LinkedList<Vehicle> fleet = new LinkedList<>();
         Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
         Vehicle ambulance = new Vehicle("A-01", VehicleType.AMBULANCE);
@@ -538,12 +584,17 @@ class IncidentManagerTest {
 
         Incident accident = new Incident("I-ACC", IncidentType.ACCIDENT, "Norte", Severity.HIGH);
 
-        assertEquals(ambulance, manager.proposeCandidateVehicle(accident, fleet));
+        // Act
+        Vehicle candidate = manager.proposeCandidateVehicle(accident, fleet);
+
+        // Assert
+        assertEquals(ambulance, candidate);
     }
 
     // Caso 3: Para un accidente, si no hay ambulancia disponible propone una patrulla disponible como apoyo.
     @Test
     void proposeCandidateVehicleReturnsPatrolForAccidentWhenNoAmbulanceAvailable() {
+        // Arrange
         LinkedList<Vehicle> fleet = new LinkedList<>();
         Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
         Vehicle ambulance = new Vehicle("A-01", VehicleType.AMBULANCE);
@@ -553,18 +604,24 @@ class IncidentManagerTest {
 
         Incident accident = new Incident("I-ACC", IncidentType.ACCIDENT, "Norte", Severity.HIGH);
 
-        assertEquals(patrol, manager.proposeCandidateVehicle(accident, fleet));
+        // Act
+        Vehicle candidate = manager.proposeCandidateVehicle(accident, fleet);
+
+        // Assert
+        assertEquals(patrol, candidate);
     }
 
     // Caso 4: Lanza VehicleAssignmentException si no hay ningun vehiculo compatible disponible.
     @Test
     void proposeCandidateVehicleThrowsExceptionWhenNoCompatibleAvailable() {
+        // Arrange
         LinkedList<Vehicle> fleet = new LinkedList<>();
         Vehicle patrol = new Vehicle("P-01", VehicleType.PATROL);
         fleet.addLast(patrol);
 
         Incident fire = new Incident("I-FIRE", IncidentType.FIRE, "Sur", Severity.HIGH);
 
+        // Act & Assert
         assertThrows(VehicleAssignmentException.class,
                 () -> manager.proposeCandidateVehicle(fire, fleet));
     }

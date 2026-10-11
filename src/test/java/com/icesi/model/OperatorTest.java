@@ -79,7 +79,10 @@ class OperatorTest {
     // Caso 5: El puntaje inicial del operador debe ser cero.
     @Test
     void operatorInitialScoreIsZero() {
+        // Arrange & Act
         Operator operator1 = new Operator(0, 0);
+
+        // Assert
         assertEquals(0, operator1.getScore());
     }
 
@@ -87,9 +90,14 @@ class OperatorTest {
     // Caso 6: Agregar puntos incrementa el puntaje acumulado del operador.
     @Test
     void addScoreIncreasesOperatorScore() {
+        // Arrange
         Operator operator1 = new Operator(0, 0);
+
+        // Act
         operator1.addScore(100);
         operator1.addScore(20);
+
+        // Assert
         assertEquals(120, operator1.getScore());
     }
 }
