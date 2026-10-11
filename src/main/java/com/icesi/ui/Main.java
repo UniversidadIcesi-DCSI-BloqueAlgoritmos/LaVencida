@@ -1,5 +1,6 @@
 package com.icesi.ui;
 
+import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentManager;
@@ -19,20 +20,11 @@ public class Main {
     private static final IncidentManager manager = new IncidentManager();
     private static final LinkedList<Vehicle> vehicles = new LinkedList<>();
     private static final Operator operator = new Operator(4, 4);
+    private static final CityMap cityMap = new CityMap();
 
-    // Tamano del mapa y codigos de cada celda, segun lo definido en la integradora
-    private static final int MAP_SIZE = 64;
-    private static final int PATH = 0;
-    private static final int OBSTACLE = 1;
-    private static final int RESIDENTIAL = 2;
-    private static final int COMMERCIAL = 3;
-    private static final int MAIN_ROAD = 4;
-    private static final int[][] map = new int[MAP_SIZE][MAP_SIZE];
-
-    // Punto de entrada: carga los vehiculos y el mapa, y repite el menu hasta que el usuario elija 0.
+    // Punto de entrada: carga los vehiculos y repite el menu hasta que el usuario elija 0.
     public static void main(String[] args) {
         loadVehicles();
-        buildMap();
         int option = -1;
         while (option != 0) {
             showMenu();
@@ -197,7 +189,7 @@ public class Main {
             newColumn++;
         }
 
-        if (!isWalkable(newRow, newColumn)) {
+        if (!cityMap.isWalkable(newRow, newColumn)) {
             System.out.println("No se puede mover ahi: hay un obstaculo, una zona no transitable o el limite del mapa.");
             return;
         }
@@ -212,59 +204,15 @@ public class Main {
                 + ". Operador en (" + operator.getRow() + ", " + operator.getColumn() + ").");
     }
 
-    // Indica si una celda esta dentro del mapa y se puede transitar: solo los caminos (0) y las vias principales (4).
-    private static boolean isWalkable(int row, int column) {
-        if (row < 0 || row >= MAP_SIZE || column < 0 || column >= MAP_SIZE) {
-            return false;
-        }
-        return map[row][column] == PATH || map[row][column] == MAIN_ROAD;
-    }
-
-    // Construye el mapa: obstaculos en el borde, vias principales cada 16 celdas, caminos cada 4, zonas residenciales y comerciales en las manzanas, y algunos obstaculos.
-    private static void buildMap() {
-        for (int i = 0; i < MAP_SIZE; i++) {
-            for (int j = 0; j < MAP_SIZE; j++) {
-                if (i == 0 || j == 0 || i == MAP_SIZE - 1 || j == MAP_SIZE - 1) {
-                    map[i][j] = OBSTACLE;
-                } else if (i % 16 == 8 || j % 16 == 8) {
-                    map[i][j] = MAIN_ROAD;
-                } else if (i % 4 == 0 || j % 4 == 0) {
-                    map[i][j] = PATH;
-                } else if ((i / 4 + j / 4) % 3 == 0) {
-                    map[i][j] = COMMERCIAL;
-                } else {
-                    map[i][j] = RESIDENTIAL;
-                }
-            }
-        }
-
-        // obstaculos dentro de manzanas (3x3 celdas)
-        fillObstacle(17, 19, 17, 19);
-        fillObstacle(45, 47, 29, 31);
-
-        // obstaculos sobre caminos: obligan a buscar otra ruta
-        map[20][12] = OBSTACLE;
-        map[12][28] = OBSTACLE;
-    }
-
-    // Marca como obstaculo todas las celdas de un rectangulo (limites incluidos).
-    private static void fillObstacle(int fromRow, int toRow, int fromColumn, int toColumn) {
-        for (int i = fromRow; i <= toRow; i++) {
-            for (int j = fromColumn; j <= toColumn; j++) {
-                map[i][j] = OBSTACLE;
-            }
-        }
-    }
-
     // Imprime la matriz del mapa con los codigos de la integradora y marca con O la posicion del operador.
     private static void printMap() {
         System.out.println("Mapa (0 = camino disponible, 1 = obstaculo, 2 = zona residencial, 3 = zona comercial, 4 = via principal, O = operador)");
-        for (int i = 0; i < MAP_SIZE; i++) {
-            for (int j = 0; j < MAP_SIZE; j++) {
+        for (int i = 0; i < cityMap.getSize(); i++) {
+            for (int j = 0; j < cityMap.getSize(); j++) {
                 if (i == operator.getRow() && j == operator.getColumn()) {
                     System.out.print("O ");
                 } else {
-                    System.out.print(map[i][j] + " ");
+                    System.out.print(cityMap.getCell(i, j) + " ");
                 }
             }
             System.out.println();
