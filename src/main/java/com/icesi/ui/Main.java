@@ -3,6 +3,7 @@ package com.icesi.ui;
 import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
+import com.icesi.model.IncidentGenerator;
 import com.icesi.model.IncidentManager;
 import com.icesi.model.IncidentType;
 import com.icesi.model.Movement;
@@ -10,6 +11,8 @@ import com.icesi.model.Operator;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
+import com.icesi.persistence.JsonPersistence;
+import com.icesi.persistence.SerializationPersistence;
 import com.icesi.structures.LinkedList;
 
 import java.util.Scanner;
@@ -17,10 +20,17 @@ import java.util.Scanner;
 public class Main {
 
     private static final Scanner scanner = new Scanner(System.in);
-    private static final IncidentManager manager = new IncidentManager();
-    private static final LinkedList<Vehicle> vehicles = new LinkedList<>();
+    private static IncidentManager manager = new IncidentManager();
+    private static LinkedList<Vehicle> vehicles = new LinkedList<>();
     private static final Operator operator = new Operator(4, 4);
     private static final CityMap cityMap = new CityMap();
+    private static final IncidentGenerator generator = new IncidentGenerator();
+    private static final JsonPersistence jsonPersistence = new JsonPersistence();
+    private static final SerializationPersistence serializationPersistence = new SerializationPersistence();
+
+    private static final String DEFAULT_VEHICLES_JSON = "data/vehicles.json";
+    private static final String DEFAULT_INCIDENTS_JSON = "data/incidents.json";
+    private static final String DEFAULT_STATE_DAT = "data/simulation_state.dat";
 
     // Punto de entrada: carga los vehiculos y repite el menu hasta que el usuario elija 0.
     public static void main(String[] args) {
@@ -36,15 +46,23 @@ public class Main {
 
     // Precarga tres vehiculos iniciales: una patrulla, una ambulancia y un camion de bomberos.
     private static void loadVehicles() {
-        vehicles.addLast(new Vehicle("P-01", VehicleType.PATROL));
-        vehicles.addLast(new Vehicle("A-01", VehicleType.AMBULANCE));
-        vehicles.addLast(new Vehicle("F-01", VehicleType.FIRE_TRUCK));
+        vehicles.addLast(new Vehicle("P-01", VehicleType.PATROL, "Estacion Norte"));
+        vehicles.addLast(new Vehicle("A-01", VehicleType.AMBULANCE, "Hospital Central"));
+        vehicles.addLast(new Vehicle("F-01", VehicleType.FIRE_TRUCK, "Estacion Sur"));
     }
 
-    // Imprime en consola las opciones del menu principal.
+    // Imprime en consola los indicadores en tiempo real (RF-13, RF-14) y las opciones del menu principal.
     private static void showMenu() {
         System.out.println();
         System.out.println("===== SGMMS - Centro de Monitoreo =====");
+        System.out.println("Operador: (" + operator.getRow() + ", " + operator.getColumn()
+                + ") | Puntaje: " + operator.getScore() + " pts");
+        System.out.println("Incidentes activos: " + manager.getActiveIncidentCount()
+                + " (Accidentes: " + manager.getActiveAccidentCount()
+                + ", Robos: " + manager.getActiveTheftCount()
+                + ", Incendios: " + manager.getActiveFireCount() + ")"
+                + " | Vehiculos disponibles: " + manager.countAvailableVehicles(vehicles));
+        System.out.println("---------------------------------------");
         System.out.println("1. Registrar incidente");
         System.out.println("2. Ver incidentes por prioridad");
         System.out.println("3. Ver incidente de mayor prioridad");
@@ -56,6 +74,9 @@ public class Main {
         System.out.println("9. Mover operador");
         System.out.println("10. Deshacer ultimo movimiento del operador");
         System.out.println("11. Ver mapa");
+        System.out.println("12. Generar incidente automatico (RF-4)");
+        System.out.println("13. Guardar / Cargar datos en JSON (RF-15)");
+        System.out.println("14. Serializar / Deserializar estado del sistema (RF-16)");
         System.out.println("0. Salir");
     }
 
@@ -84,6 +105,12 @@ public class Main {
                 undoMovement();
             } else if (option == 11) {
                 printMap();
+            } else if (option == 12) {
+                generateAutomaticIncident();
+            } else if (option == 13) {
+                saveOrLoadJson();
+            } else if (option == 14) {
+                saveOrLoadSerialization();
             } else if (option != 0) {
                 System.out.println("Opcion invalida.");
             }
@@ -100,6 +127,42 @@ public class Main {
         Severity severity = readSeverity();
         manager.registerIncident(new Incident(id, type, location, severity));
         System.out.println("Incidente " + id + " registrado.");
+    }
+
+    // Permite generar incidentes aleatorios (robo/incendio) o por los 3 criterios de accidentes (RF-4).
+    private static void generateAutomaticIncident() {
+        System.out.println("1. Robo aleatorio  2. Incendio aleatorio  3. Evaluar colision  4. Evaluar congestion  5. Evaluar vehiculo detenido");
+        int option = readInt("Seleccione criterio de generacion: ");
+        Incident generated = null;
+        if (option == 1) {
+            generated = generator.generateRandomTheft();
+        } else if (option == 2) {
+            generated = generator.generateRandomFire();
+        } else if (option == 3) {
+            String v1 = readText("ID del primer vehiculo: ");
+            String v2 = readText("ID del segundo vehiculo: ");
+            String location = readText("Ubicacion de la interseccion: ");
+            generated = generator.checkCollisionAccident(v1, v2, location);
+        } else if (option == 4) {
+            String zone = readText("Nombre de la zona: ");
+            int count = readInt("Cantidad de vehiculos en la zona: ");
+            generated = generator.checkCongestionAccident(zone, count);
+        } else if (option == 5) {
+            String vehicleId = readText("ID del vehiculo detenido: ");
+            String location = readText("Via donde esta detenido: ");
+            int cycles = readInt("Ciclos detenido: ");
+            generated = generator.checkStoppedVehicleAccident(vehicleId, location, cycles);
+        } else {
+            System.out.println("Opcion invalida.");
+            return;
+        }
+
+        if (generated == null) {
+            System.out.println("No se cumplieron las condiciones criticas para generar un incidente.");
+            return;
+        }
+        manager.registerIncident(generated);
+        System.out.println("Incidente generado y registrado: " + describeIncident(generated));
     }
 
     // Muestra todos los incidentes ordenados de mayor a menor prioridad.
@@ -129,19 +192,27 @@ public class Main {
         System.out.println(describeIncident(incident));
     }
 
-    // Pide el ID de un incidente y el de un vehiculo, y asigna el vehiculo al incidente.
+    // Pide el ID de un incidente, sugiere el vehiculo candidato (RF-7) y asigna el vehiculo al incidente.
     private static void assignVehicle() {
         Incident incident = manager.findIncidentById(readText("ID del incidente: "));
+        try {
+            Vehicle candidate = manager.proposeCandidateVehicle(incident, vehicles);
+            System.out.println("Vehiculo candidato recomendado (RF-7): " + candidate.getId()
+                    + " (" + candidate.getType() + " - " + candidate.getLocation() + ")");
+        } catch (RuntimeException e) {
+            System.out.println("Aviso de candidato: " + e.getMessage());
+        }
         Vehicle vehicle = askVehicle();
         manager.assignVehicle(vehicle, incident);
         System.out.println("Vehiculo " + vehicle.getId() + " asignado al incidente " + incident.getId() + ".");
     }
 
-    // Pide el ID de un incidente en progreso y finaliza su atencion, dejando el vehiculo disponible.
+    // Pide el ID de un incidente en progreso, finaliza su atencion y suma puntos al operador (RF-14).
     private static void finishAttention() {
         Incident incident = manager.findIncidentById(readText("ID del incidente: "));
-        manager.finishAttention(incident);
-        System.out.println("Atencion del incidente " + incident.getId() + " finalizada.");
+        int pointsEarned = manager.finishAttention(incident, operator);
+        System.out.println("Atencion del incidente " + incident.getId() + " finalizada. Puntos obtenidos: +"
+                + pointsEarned + " | Puntaje total del operador: " + operator.getScore() + " pts.");
     }
 
     // Pide el ID de un vehiculo y lo libera, devolviendo su incidente al estado PENDING.
@@ -151,10 +222,15 @@ public class Main {
         System.out.println("Vehiculo " + vehicle.getId() + " liberado. El incidente vuelve a PENDING.");
     }
 
-    // Muestra el ID, tipo y estado de cada vehiculo.
+    // Muestra el ID, tipo, estado, ubicacion e incidente asignado de cada vehiculo (RF-6).
     private static void showVehicles() {
         for (Vehicle vehicle : vehicles) {
-            System.out.println(vehicle.getId() + " | " + vehicle.getType() + " | " + vehicle.getStatus());
+            String info = vehicle.getId() + " | " + vehicle.getType() + " | " + vehicle.getStatus()
+                    + " | Ubicacion: " + vehicle.getLocation();
+            if (vehicle.getAssignedIncident() != null) {
+                info = info + " | Incidente: " + vehicle.getAssignedIncident().getId();
+            }
+            System.out.println(info);
         }
     }
 
@@ -216,6 +292,47 @@ public class Main {
                 }
             }
             System.out.println();
+        }
+    }
+
+    // Permite guardar o cargar vehiculos e incidentes desde archivos JSON (RF-15).
+    private static void saveOrLoadJson() {
+        System.out.println("1. Guardar vehiculos en JSON  2. Cargar vehiculos desde JSON  3. Guardar incidentes en JSON  4. Cargar incidentes desde JSON");
+        int option = readInt("Opcion: ");
+        if (option == 1) {
+            jsonPersistence.saveVehicles(vehicles, DEFAULT_VEHICLES_JSON);
+            System.out.println("Vehiculos guardados en " + DEFAULT_VEHICLES_JSON);
+        } else if (option == 2) {
+            vehicles = jsonPersistence.loadVehicles(DEFAULT_VEHICLES_JSON);
+            System.out.println("Se cargaron " + vehicles.size() + " vehiculos desde " + DEFAULT_VEHICLES_JSON);
+        } else if (option == 3) {
+            LinkedList<Incident> currentIncidents = manager.getIncidentsSortedByPriority();
+            jsonPersistence.saveIncidents(currentIncidents, DEFAULT_INCIDENTS_JSON);
+            System.out.println("Incidentes guardados en " + DEFAULT_INCIDENTS_JSON);
+        } else if (option == 4) {
+            LinkedList<Incident> loaded = jsonPersistence.loadIncidents(DEFAULT_INCIDENTS_JSON);
+            for (Incident incident : loaded) {
+                manager.registerIncident(incident);
+            }
+            System.out.println("Se cargaron y registraron " + loaded.size() + " incidentes desde " + DEFAULT_INCIDENTS_JSON);
+        } else {
+            System.out.println("Opcion invalida.");
+        }
+    }
+
+    // Permite serializar o deserializar el estado completo del IncidentManager (RF-16).
+    private static void saveOrLoadSerialization() {
+        System.out.println("1. Serializar estado actual del sistema  2. Deserializar y restaurar estado del sistema");
+        int option = readInt("Opcion: ");
+        if (option == 1) {
+            serializationPersistence.saveManagerState(manager, DEFAULT_STATE_DAT);
+            System.out.println("Estado del sistema serializado en " + DEFAULT_STATE_DAT);
+        } else if (option == 2) {
+            manager = serializationPersistence.loadManagerState(DEFAULT_STATE_DAT);
+            System.out.println("Estado restaurado desde " + DEFAULT_STATE_DAT
+                    + ". Incidentes registrados: " + manager.getIncidentCount());
+        } else {
+            System.out.println("Opcion invalida.");
         }
     }
 
