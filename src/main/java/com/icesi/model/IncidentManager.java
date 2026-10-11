@@ -8,10 +8,11 @@ import com.icesi.exceptions.VehicleAssignmentException;
 import com.icesi.exceptions.VehicleReleaseException;
 import com.icesi.structures.LinkedList;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-public class IncidentManager {
+public class IncidentManager implements Serializable {
 
     private LinkedList<Incident> incidents;
 

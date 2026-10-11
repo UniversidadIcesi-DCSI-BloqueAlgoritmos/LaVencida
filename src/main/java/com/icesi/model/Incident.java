@@ -1,8 +1,9 @@
 package com.icesi.model;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class Incident {
+public class Incident implements Serializable {
 
     private String id;
     private IncidentType type;

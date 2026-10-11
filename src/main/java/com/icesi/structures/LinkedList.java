@@ -2,11 +2,12 @@ package com.icesi.structures;
 
 import com.icesi.exceptions.EmptyStructureException;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-public class LinkedList<T> implements Iterable<T> {
+public class LinkedList<T> implements Iterable<T>, Serializable {
 
     private Node<T> head;
     private Node<T> tail;

@@ -1,6 +1,8 @@
 package com.icesi.model;
 
-public class Movement {
+import java.io.Serializable;
+
+public class Movement implements Serializable {
 
     private Direction direction;
     private int previousRow;
