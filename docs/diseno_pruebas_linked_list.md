@@ -4,7 +4,7 @@
 
 **Operaciones probadas:** addFirst(T), addLast(T), remove(int): T, contains(T): boolean, sort(Comparator<T>): void, binarySearch(T, Comparator<T>): int
 
-**Objetivo de la Prueba:** Verificar que la lista agrega y elimina elementos manteniendo el orden y las referencias de cabeza y cola, que contains encuentra los elementos existentes, que sort (ordenamiento burbuja) deja los elementos en orden ascendente según el comparador sin perder elementos y conservando el orden de los iguales, y que binarySearch encuentra la posición de un elemento en una lista ordenada o retorna -1 si no existe.
+**Objetivo de la Prueba:** Verificar que la lista agrega y elimina elementos manteniendo el orden y las referencias de cabeza y cola, que contains encuentra los elementos existentes, que sort (ordenamiento por selección) deja los elementos en orden ascendente según el comparador sin perder elementos y conservando el orden de los iguales, y que binarySearch encuentra la posición de un elemento en una lista ordenada o retorna -1 si no existe.
 
 | Arrange (Inicialización) | Act (Acción) | Assert (Verificar) |
 |---|---|---|
