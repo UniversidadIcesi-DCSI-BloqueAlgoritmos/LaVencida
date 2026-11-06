@@ -64,8 +64,13 @@ public class BinarySearchTree<T> implements Serializable {
         } else if (cmp > 0) {
             current.setRight(insertRecursive(current.getRight(), value));
         } else {
-            // Si el valor ya existe con la misma clave, se actualiza el valor almacenado
-            current.setValue(value);
+            // Si el elemento es exactamente igual o equals(), se actualiza
+            if (value.equals(current.getValue())) {
+                current.setValue(value);
+            } else {
+                // Si tienen igual prioridad pero son elementos distintos, el recien llegado va a la derecha
+                current.setRight(insertRecursive(current.getRight(), value));
+            }
         }
         return current;
     }
@@ -89,7 +94,10 @@ public class BinarySearchTree<T> implements Serializable {
         }
         int cmp = compare(value, current.getValue());
         if (cmp == 0) {
-            return current.getValue();
+            if (value.equals(current.getValue())) {
+                return current.getValue();
+            }
+            return searchRecursive(current.getRight(), value);
         } else if (cmp < 0) {
             return searchRecursive(current.getLeft(), value);
         } else {
@@ -118,6 +126,10 @@ public class BinarySearchTree<T> implements Serializable {
         } else if (cmp > 0) {
             current.setRight(deleteRecursive(current.getRight(), value));
         } else {
+            if (!value.equals(current.getValue())) {
+                current.setRight(deleteRecursive(current.getRight(), value));
+                return current;
+            }
             // Nodo encontrado, procedemos con los 3 casos de eliminacion:
             size--;
 
