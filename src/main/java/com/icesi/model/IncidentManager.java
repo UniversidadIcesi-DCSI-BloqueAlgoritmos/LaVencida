@@ -6,6 +6,7 @@ import com.icesi.exceptions.IncidentStateException;
 import com.icesi.exceptions.NoActiveIncidentsException;
 import com.icesi.exceptions.VehicleAssignmentException;
 import com.icesi.exceptions.VehicleReleaseException;
+import com.icesi.structures.BinarySearchTree;
 import com.icesi.structures.LinkedList;
 
 import java.io.Serializable;
@@ -15,10 +16,12 @@ import java.time.LocalDateTime;
 public class IncidentManager implements Serializable {
 
     private LinkedList<Incident> incidents;
+    private BinarySearchTree<Incident> activeIncidentsTree;
 
     // Crea el gestor con la lista de incidentes vacia.
     public IncidentManager() {
         this.incidents = new LinkedList<>();
+        this.activeIncidentsTree = new BinarySearchTree<>(new IncidentPriorityComparator());
     }
 
     // Registra un incidente al final de la lista; lanza IllegalArgumentException si es nulo y DuplicateIncidentException si ya existe uno con el mismo id.
@@ -30,6 +33,9 @@ public class IncidentManager implements Serializable {
             throw new DuplicateIncidentException("Ya existe un incidente con id " + incident.getId());
         }
         incidents.addLast(incident);
+        if (incident.getStatus() != IncidentStatus.RESOLVED) {
+            activeIncidentsTree.insert(incident);
+        }
     }
 
     // Indica si ya hay un incidente registrado con ese id.
@@ -52,20 +58,12 @@ public class IncidentManager implements Serializable {
         return incidents.get(index);
     }
 
-    // Devuelve el incidente de mayor prioridad (gravedad HIGH, MEDIUM, LOW; si empatan, el mas antiguo); lanza NoActiveIncidentsException si no hay incidentes.
+    // Devuelve el incidente activo de mayor prioridad (gravedad HIGH, MEDIUM, LOW; si empatan, el mas antiguo) usando el BST; lanza NoActiveIncidentsException si no hay incidentes activos.
     public Incident getHighestPriorityIncident() {
-        if (incidents.isEmpty()) {
+        if (activeIncidentsTree == null || activeIncidentsTree.isEmpty()) {
             throw new NoActiveIncidentsException("No hay incidentes activos registrados");
         }
-
-        Incident best = incidents.get(0);
-        for (int i = 1; i < incidents.size(); i++) {
-            Incident current = incidents.get(i);
-            if (isHigherPriority(current, best)) {
-                best = current;
-            }
-        }
-        return best;
+        return activeIncidentsTree.findMin();
     }
 
     // Indica si el candidato tiene mas prioridad que el actual: primero por gravedad y, si es igual, por antiguedad.
@@ -159,6 +157,9 @@ public class IncidentManager implements Serializable {
             throw new IncidentStateException("El incidente no esta en proceso de atencion");
         }
         incident.setStatus(IncidentStatus.RESOLVED);
+        if (activeIncidentsTree != null) {
+            activeIncidentsTree.delete(incident);
+        }
         Vehicle vehicle = incident.getAssignedVehicle();
         vehicle.setStatus(VehicleStatus.AVAILABLE);
         vehicle.setAssignedIncident(null);
@@ -320,5 +321,18 @@ public class IncidentManager implements Serializable {
             }
         }
         return count;
+    }
+
+    // Retorna los incidentes activos ordenados por prioridad (gravedad y fecha) utilizando el recorrido in-orden del BST.
+    public LinkedList<Incident> getActiveIncidentsByPriority() {
+        if (activeIncidentsTree == null) {
+            return new LinkedList<>();
+        }
+        return activeIncidentsTree.inOrder();
+    }
+
+    // Retorna el arbol binario de busqueda de incidentes activos.
+    public BinarySearchTree<Incident> getActiveIncidentsTree() {
+        return activeIncidentsTree;
     }
 }
