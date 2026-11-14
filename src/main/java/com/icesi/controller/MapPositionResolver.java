@@ -12,8 +12,27 @@ public class MapPositionResolver {
         this.cityMap = cityMap;
     }
 
-    // Devuelve la celda {fila, columna} transitable que le corresponde a la ubicacion.
+    // Devuelve la celda {fila, columna} transitable que le corresponde a la ubicacion; lanza IllegalArgumentException si es nula o vacia.
     public int[] resolve(String location) {
-        return null;
+        if (location == null || location.isBlank()) {
+            throw new IllegalArgumentException("La ubicacion no puede ser nula ni vacia");
+        }
+
+        int size = cityMap.getSize();
+        int totalCells = size * size;
+
+        // el hash del nombre siempre da el mismo numero, asi la misma ubicacion cae en la misma celda
+        int start = Math.floorMod(location.trim().hashCode() * 31 + 7, totalCells);
+
+        // desde esa celda avanzamos hasta encontrar una por la que se pueda transitar
+        for (int i = 0; i < totalCells; i++) {
+            int index = (start + i) % totalCells;
+            int row = index / size;
+            int column = index % size;
+            if (cityMap.isWalkable(row, column)) {
+                return new int[]{row, column};
+            }
+        }
+        throw new IllegalStateException("El mapa no tiene celdas transitables");
     }
 }
