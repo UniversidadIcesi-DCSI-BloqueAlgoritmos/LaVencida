@@ -6,6 +6,7 @@ import com.icesi.ui.HudBar;
 import com.icesi.ui.MonitoringCenterScreen;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.TitleScreen;
+import com.icesi.ui.TrafficMapScreen;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -40,6 +41,7 @@ public class GameApplication extends Application {
         content = new StackPane();
 
         screens.put("center", new MonitoringCenterScreen(controller, this::showScreen));
+        screens.put("map", new TrafficMapScreen(controller));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
