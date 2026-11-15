@@ -25,6 +25,7 @@ public final class SpriteRegistry {
     public static final String HOUSE = "house";
     public static final String SHOP = "shop";
     public static final String TREE = "tree";
+    public static final String SIREN = "siren";
 
     private static final String IMAGES_FOLDER = "/com/icesi/images/";
 
@@ -148,6 +149,20 @@ public final class SpriteRegistry {
                 ".yy.yrry.y..",
                 ".y...yy.....",
                 ".....y......",
+                "............"
+        });
+        PIXEL_ART.put(SIREN, new String[]{
+                "............",
+                "..y..kk..y..",
+                "...ykrrky...",
+                ".y.krrrrk.y.",
+                "...krwrrk...",
+                "...krwrrk...",
+                "...krrrrk...",
+                "..kkkkkkkk..",
+                "..kddddddk..",
+                ".kkkkkkkkkk.",
+                "............",
                 "............"
         });
         PIXEL_ART.put(HOUSE, new String[]{
