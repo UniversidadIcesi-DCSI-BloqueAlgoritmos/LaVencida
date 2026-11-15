@@ -3,6 +3,7 @@ package com.icesi;
 import com.icesi.controller.GameController;
 import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
+import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MonitoringCenterScreen;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.TitleScreen;
@@ -42,6 +43,7 @@ public class GameApplication extends Application {
 
         screens.put("center", new MonitoringCenterScreen(controller, this::showScreen));
         screens.put("map", new TrafficMapScreen(controller));
+        screens.put("incidents", new IncidentPanelScreen(controller));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
