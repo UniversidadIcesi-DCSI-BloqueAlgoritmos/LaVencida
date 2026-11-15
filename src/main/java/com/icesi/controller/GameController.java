@@ -53,71 +53,129 @@ public class GameController {
 
     // Mueve al operador si la celda destino es transitable; retorna true si se movio.
     public boolean moveOperator(Direction direction) {
-        return false;
+        if (direction == null) {
+            return false;
+        }
+
+        // calculamos a donde quedaria antes de moverlo de verdad
+        int newRow = operator.getRow();
+        int newColumn = operator.getColumn();
+        if (direction == Direction.UP) {
+            newRow--;
+        } else if (direction == Direction.DOWN) {
+            newRow++;
+        } else if (direction == Direction.LEFT) {
+            newColumn--;
+        } else if (direction == Direction.RIGHT) {
+            newColumn++;
+        }
+
+        // no se puede salir del mapa ni pasar por obstaculos o manzanas
+        if (!cityMap.isWalkable(newRow, newColumn)) {
+            return false;
+        }
+        operator.move(direction);
+        return true;
     }
 
     // Deshace el ultimo movimiento del operador; retorna false si no habia movimientos.
     public boolean undoOperatorMove() {
-        return false;
+        // si la pila esta vacia no hay nada que deshacer, pero el juego sigue
+        if (operator.getMovementCount() == 0) {
+            return false;
+        }
+        operator.undoLastMovement();
+        return true;
     }
 
     // Genera un robo o un incendio aleatorio y lo registra como activo.
     public Incident spawnRandomIncident() {
-        return null;
+        Incident incident;
+        if (random.nextBoolean()) {
+            incident = generator.generateRandomTheft();
+        } else {
+            incident = generator.generateRandomFire();
+        }
+        manager.registerIncident(incident);
+        return incident;
     }
 
     // Propone el vehiculo disponible mas adecuado para el incidente.
     public Vehicle proposeVehicle(Incident incident) {
-        return null;
+        return manager.proposeCandidateVehicle(incident, vehicles);
     }
 
     // Asigna el vehiculo al incidente usando sus IDs.
     public void assignVehicle(String vehicleId, String incidentId) {
-
+        Vehicle vehicle = findVehicleById(vehicleId);
+        Incident incident = manager.findIncidentById(incidentId);
+        manager.assignVehicle(vehicle, incident);
     }
 
     // Finaliza la atencion del incidente y retorna los puntos ganados.
     public int resolveIncident(String incidentId) {
-        return 0;
+        Incident incident = manager.findIncidentById(incidentId);
+        return manager.finishAttention(incident, operator);
     }
 
     // Devuelve el incidente activo de mayor prioridad o null si no hay ninguno.
     public Incident getHighestPriorityIncidentOrNull() {
-        return null;
+        if (manager.getActiveIncidentCount() == 0) {
+            return null;
+        }
+        return manager.getHighestPriorityIncident();
     }
 
     // Busca un vehiculo por su ID.
     public Vehicle findVehicleById(String vehicleId) {
-        return null;
+        for (Vehicle current : vehicles) {
+            if (current.getId().equals(vehicleId)) {
+                return current;
+            }
+        }
+        throw new IllegalArgumentException("No existe un vehiculo con id " + vehicleId);
+    }
+
+    // Devuelve la celda donde se dibuja el incidente en el mapa.
+    public int[] getCellOf(Incident incident) {
+        return resolver.resolve(incident.getLocation());
+    }
+
+    // Devuelve la celda donde se dibuja el vehiculo: en su incidente si esta atendiendo uno, si no en su estacion.
+    public int[] getCellOf(Vehicle vehicle) {
+        if (vehicle.getAssignedIncident() != null) {
+            return getCellOf(vehicle.getAssignedIncident());
+        }
+        return resolver.resolve(vehicle.getLocation());
     }
 
     // Devuelve los incidentes activos ordenados por prioridad.
     public LinkedList<Incident> getActiveIncidentsByPriority() {
-        return null;
+        return manager.getActiveIncidentsByPriority();
     }
 
     public int getActiveIncidentCount() {
-        return 0;
+        return manager.getActiveIncidentCount();
     }
 
     public int getActiveAccidentCount() {
-        return 0;
+        return manager.getActiveAccidentCount();
     }
 
     public int getActiveTheftCount() {
-        return 0;
+        return manager.getActiveTheftCount();
     }
 
     public int getActiveFireCount() {
-        return 0;
+        return manager.getActiveFireCount();
     }
 
     public int getAvailableVehicleCount() {
-        return 0;
+        return manager.countAvailableVehicles(vehicles);
     }
 
     public int getScore() {
-        return 0;
+        return operator.getScore();
     }
 
     public CityMap getCityMap() {
