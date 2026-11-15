@@ -98,7 +98,8 @@ public class MonitoringCenterScreen implements GameScreen {
         keys.setVgap(6);
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
-                {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"}
+                {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
+                {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"}
         };
         for (int i = 0; i < controls.length; i++) {
             Label key = styled(new Label(controls[i][0]), "hud-key-active");

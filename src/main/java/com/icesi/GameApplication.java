@@ -5,7 +5,11 @@ import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MonitoringCenterScreen;
+import com.icesi.model.Incident;
 import com.icesi.ui.RetroTheme;
+import com.icesi.ui.SpriteRegistry;
+import com.icesi.ui.Texts;
+import com.icesi.ui.ToastLayer;
 import com.icesi.ui.TitleScreen;
 import com.icesi.ui.TrafficMapScreen;
 import javafx.animation.Animation;
@@ -30,7 +34,13 @@ public class GameApplication extends Application {
     private HudBar hud;
     private StackPane content;
     private TitleScreen titleScreen;
+    private ToastLayer toasts;
+    private MonitoringCenterScreen centerScreen;
     private boolean started;
+    private boolean paused;
+
+    // cada cuantos segundos aparece un incidente nuevo en la simulacion
+    private static final int SPAWN_SECONDS = 12;
 
     private Map<String, GameScreen> screens = new HashMap<>();
     private GameScreen currentScreen;
@@ -41,7 +51,8 @@ public class GameApplication extends Application {
         hud = new HudBar();
         content = new StackPane();
 
-        screens.put("center", new MonitoringCenterScreen(controller, this::showScreen));
+        centerScreen = new MonitoringCenterScreen(controller, this::showScreen);
+        screens.put("center", centerScreen);
         screens.put("map", new TrafficMapScreen(controller));
         screens.put("incidents", new IncidentPanelScreen(controller));
 
@@ -49,7 +60,8 @@ public class GameApplication extends Application {
         game.setTop(hud);
 
         titleScreen = new TitleScreen();
-        StackPane root = new StackPane(game, titleScreen.getView());
+        toasts = new ToastLayer();
+        StackPane root = new StackPane(game, toasts, titleScreen.getView());
         titleScreen.getView().setOnMouseClicked(e -> enterGame());
 
         Scene scene = new Scene(root, 1280, 820);
@@ -62,6 +74,11 @@ public class GameApplication extends Application {
         Timeline refresher = new Timeline(new KeyFrame(Duration.millis(250), e -> refreshAll()));
         refresher.setCycleCount(Animation.INDEFINITE);
         refresher.play();
+
+        // ciclo de la simulacion: cada cierto tiempo pasa algo en la ciudad
+        Timeline simulation = new Timeline(new KeyFrame(Duration.seconds(SPAWN_SECONDS), e -> simulateTick()));
+        simulation.setCycleCount(Animation.INDEFINITE);
+        simulation.play();
 
         stage.setTitle("SGMMS - Centro de Monitoreo de Palmira");
         stage.setScene(scene);
@@ -85,6 +102,23 @@ public class GameApplication extends Application {
             titleScreen.getView().setVisible(false);
         });
         fade.play();
+        toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
+    }
+
+    // Genera un incidente nuevo y avisa al jugador (si el juego no esta en pausa).
+    private void simulateTick() {
+        if (!started || paused) {
+            return;
+        }
+        try {
+            Incident incident = controller.spawnRandomIncident();
+            toasts.show("¡NUEVO " + Texts.of(incident.getType()) + "! " + incident.getId() + " · " + incident.getLocation(),
+                    SpriteRegistry.forIncident(incident.getType()));
+            centerScreen.showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
+            refreshAll();
+        } catch (RuntimeException e) {
+            toasts.show("Error en la simulacion: " + e.getMessage(), null);
+        }
     }
 
     // Teclas globales: navegacion entre pantallas; las demas se las pasa a la pantalla actual.
@@ -97,6 +131,11 @@ public class GameApplication extends Application {
         }
         if (currentScreen != null && currentScreen.handleKey(code)) {
             refreshAll();
+            return;
+        }
+        if (code == KeyCode.P) {
+            paused = !paused;
+            toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
             return;
         }
         if (code == KeyCode.C || code == KeyCode.DIGIT1) {
