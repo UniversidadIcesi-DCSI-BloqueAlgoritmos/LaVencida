@@ -4,6 +4,8 @@ import javafx.animation.AnimationTimer;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
@@ -20,6 +22,7 @@ public class TitleScreen {
     private double[] starX;
     private double[] starY;
     private int[] buildingHeights;
+    private WritableImage skyImage; // el cielo se dibuja una sola vez y se reutiliza en cada cuadro
 
     // Crea la pantalla y prepara las estrellas y los edificios (siempre los mismos gracias a la semilla).
     public TitleScreen() {
@@ -72,13 +75,11 @@ public class TitleScreen {
             return;
         }
 
-        // cielo en franjas, como los degradados de 16 bits
-        Color[] sky = {RetroTheme.BLACK, Color.web("#0b1230"), RetroTheme.NIGHT, Color.web("#3b2a5e"), RetroTheme.PURPLE};
-        double band = height * 0.7 / sky.length;
-        for (int i = 0; i < sky.length; i++) {
-            gc.setFill(sky[i]);
-            gc.fillRect(0, i * band, width, band + 1);
+        // cielo degradado; solo se vuelve a calcular si la ventana cambia de tamano
+        if (skyImage == null || skyImage.getWidth() != Math.ceil(width) || skyImage.getHeight() != Math.ceil(height)) {
+            skyImage = createSky((int) Math.ceil(width), (int) Math.ceil(height));
         }
+        gc.drawImage(skyImage, 0, 0);
 
         // estrellas que titilan a destiempo
         for (int i = 0; i < starX.length; i++) {
@@ -114,6 +115,48 @@ public class TitleScreen {
         }
         drawCentered(gc, "ENTER / ESPACIO / CLIC", height * 0.62 + 52, 2, RetroTheme.LIGHT_GRAY, width);
         drawCentered(gc, "LA VENCIDA - APO II - 2026", height - 40, 2, RetroTheme.LAVENDER, width);
+    }
+
+    // Crea la imagen del cielo: un degradado de noche con "dithering" (mezcla de pixeles en cuadricula)
+    // para que el paso de un color a otro se vea suave pero siga siendo pixel-art.
+    private WritableImage createSky(int width, int height) {
+        Color[] stops = {RetroTheme.BLACK, Color.web("#0b1230"), RetroTheme.NIGHT, Color.web("#3b2a5e"),
+                RetroTheme.PURPLE, Color.web("#b8456b")};
+        // matriz de Bayer 4x4: decide en que orden se "prenden" los pixeles del color siguiente
+        int[][] bayer = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
+
+        WritableImage image = new WritableImage(width, height);
+        PixelWriter writer = image.getPixelWriter();
+        int block = (int) PIXEL;
+        double skyHeight = height * 0.86; // el cielo llega hasta el piso de la ciudad
+
+        for (int by = 0; by * block < height; by++) {
+            // t va de 0 (arriba) a 1 (horizonte)
+            double t = Math.min(1, (by * block) / skyHeight);
+            double position = t * (stops.length - 1);
+            int index = Math.min(stops.length - 2, (int) position);
+            double mix = position - index;
+
+            for (int bx = 0; bx * block < width; bx++) {
+                double threshold = (bayer[by % 4][bx % 4] + 0.5) / 16.0;
+                Color color = mix > threshold ? stops[index + 1] : stops[index];
+                int argb = toArgb(color);
+                for (int y = by * block; y < Math.min(height, (by + 1) * block); y++) {
+                    for (int x = bx * block; x < Math.min(width, (bx + 1) * block); x++) {
+                        writer.setArgb(x, y, argb);
+                    }
+                }
+            }
+        }
+        return image;
+    }
+
+    // Convierte un color de JavaFX al numero ARGB que usa PixelWriter.
+    private int toArgb(Color color) {
+        int r = (int) Math.round(color.getRed() * 255);
+        int g = (int) Math.round(color.getGreen() * 255);
+        int b = (int) Math.round(color.getBlue() * 255);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     // Dibuja la fila de edificios con ventanas que se prenden y apagan.
