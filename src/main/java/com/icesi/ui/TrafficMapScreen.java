@@ -37,6 +37,9 @@ public class TrafficMapScreen implements GameScreen {
     private Canvas cityLayer;
     private Canvas spriteLayer;
 
+    private VehicleAnimator vehicleAnimator;
+    private double lastTime = -1;
+
     private Label positionLabel;
     private Label stackLabel;
     private Label actionLabel;
@@ -46,6 +49,8 @@ public class TrafficMapScreen implements GameScreen {
         this.controller = controller;
         int size = controller.getCityMap().getSize();
         renderer = new CityRenderer(controller.getCityMap(), CELL);
+        vehicleAnimator = new VehicleAnimator(controller);
+        vehicleAnimator.update(0); // cada vehiculo empieza en su estacion
 
         // capa fija (la ciudad) y capa animada (incidentes, vehiculos y operador)
         cityLayer = new Canvas(size * CELL, size * CELL);
@@ -84,9 +89,14 @@ public class TrafficMapScreen implements GameScreen {
         AnimationTimer timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                double time = now / 1_000_000_000.0;
+                // los vehiculos siguen viajando aunque se este viendo otra pantalla
+                double delta = lastTime < 0 ? 0 : Math.min(0.25, time - lastTime);
+                lastTime = time;
+                vehicleAnimator.update(delta);
                 // solo se dibuja cuando la pantalla esta en la ventana
                 if (root.getScene() != null) {
-                    drawSprites(now / 1_000_000_000.0);
+                    drawSprites(time);
                 }
             }
         };
@@ -182,13 +192,20 @@ public class TrafficMapScreen implements GameScreen {
         }
 
         for (Vehicle vehicle : controller.getVehicles()) {
-            int[] cell = controller.getCellOf(vehicle);
+            double[] position = vehicleAnimator.positionOf(vehicle);
             double size = CELL * 2;
-            double x = cell[1] * CELL + CELL / 2 - size / 2;
-            double y = cell[0] * CELL + CELL / 2 - size / 2;
-            // el vehiculo en camino queda un poco al lado para no tapar el incidente
-            if (vehicle.getAssignedIncident() != null) {
+            double x = position[1] * CELL + CELL / 2 - size / 2;
+            double y = position[0] * CELL + CELL / 2 - size / 2;
+            boolean moving = vehicleAnimator.isMoving(vehicle);
+            // cuando ya llego al incidente se corre un poco al lado para no taparlo
+            if (vehicle.getAssignedIncident() != null && !moving) {
                 x += CELL * 1.2;
+            }
+            if (moving) {
+                // brinquito y luz de sirena roja/azul mientras va en camino
+                y -= Math.abs(Math.round(Math.sin(time * 18)));
+                gc.setFill((int) (time * 8) % 2 == 0 ? RetroTheme.RED : RetroTheme.BLUE);
+                gc.fillRect(x + size / 2 - 2, y - 3, 4, 3);
             }
             SpriteRegistry.draw(gc, SpriteRegistry.forVehicle(vehicle.getType()), x, y, size, size);
         }
