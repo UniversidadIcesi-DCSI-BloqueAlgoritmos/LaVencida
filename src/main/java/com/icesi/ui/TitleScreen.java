@@ -22,6 +22,10 @@ public class TitleScreen {
     private double[] starX;
     private double[] starY;
     private int[] buildingHeights;
+    private static final String[] MENU = {"JUGAR", "SALIR"};
+
+    private int selected;          // opcion del menu que esta marcada
+    private double[] menuTop = new double[MENU.length]; // donde quedo dibujada cada opcion (para el clic)
     private WritableImage skyImage; // el cielo se dibuja una sola vez y se reutiliza en cada cuadro
 
     // Crea la pantalla y prepara las estrellas y los edificios (siempre los mismos gracias a la semilla).
@@ -64,6 +68,27 @@ public class TitleScreen {
     // Detiene la animacion (cuando el jugador ya entro al juego).
     public void stop() {
         timer.stop();
+    }
+
+    // Mueve la seleccion del menu hacia arriba (-1) o hacia abajo (+1), dando la vuelta en los extremos.
+    public void moveSelection(int step) {
+        selected = Math.floorMod(selected + step, MENU.length);
+    }
+
+    // Devuelve el texto de la opcion marcada: "JUGAR" o "SALIR".
+    public String getSelectedOption() {
+        return MENU[selected];
+    }
+
+    // Marca la opcion que esta a la altura y del mouse; devuelve false si el mouse no esta sobre ninguna.
+    public boolean selectAt(double y) {
+        for (int i = 0; i < MENU.length; i++) {
+            if (y >= menuTop[i] - 8 && y <= menuTop[i] + 48) {
+                selected = i;
+                return true;
+            }
+        }
+        return false;
     }
 
     // Dibuja un cuadro de la animacion; time son los segundos que han pasado.
@@ -109,11 +134,7 @@ public class TitleScreen {
         drawCentered(gc, "CENTRO DE MONITOREO", height * 0.18 + titlePixel * 9, 4, RetroTheme.CREAM, width);
         drawCentered(gc, "PALMIRA - VALLE DEL CAUCA", height * 0.18 + titlePixel * 9 + 44, 3, RetroTheme.PINK, width);
 
-        // "PRESIONA START" prende y apaga cada medio segundo
-        if ((int) (time * 2) % 2 == 0) {
-            drawCentered(gc, "> PRESIONA START <", height * 0.62, 5, RetroTheme.CREAM, width);
-        }
-        drawCentered(gc, "ENTER / ESPACIO / CLIC", height * 0.62 + 52, 2, RetroTheme.LIGHT_GRAY, width);
+        drawMenu(gc, width, height, time);
         drawCentered(gc, "LA VENCIDA - APO II - 2026", height - 40, 2, RetroTheme.LAVENDER, width);
     }
 
@@ -157,6 +178,29 @@ public class TitleScreen {
         int g = (int) Math.round(color.getGreen() * 255);
         int b = (int) Math.round(color.getBlue() * 255);
         return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    // Dibuja el menu: la opcion marcada va en amarillo con flechas que se mueven, las demas en gris.
+    private void drawMenu(GraphicsContext gc, double width, double height, double time) {
+        double pixel = 5;
+        double top = height * 0.53;
+        for (int i = 0; i < MENU.length; i++) {
+            double y = top + i * 58;
+            menuTop[i] = y;
+            if (i == selected) {
+                // las flechas se acercan y se alejan del texto
+                double wiggle = Math.round(Math.sin(time * 6)) * PIXEL;
+                String text = MENU[i];
+                double textWidth = PixelFont.width(text, pixel);
+                double x = snap((width - textWidth) / 2);
+                PixelFont.drawWithShadow(gc, text, x, snap(y), pixel, RetroTheme.YELLOW, RetroTheme.PURPLE);
+                PixelFont.drawWithShadow(gc, ">", x - pixel * 10 + wiggle, snap(y), pixel, RetroTheme.YELLOW, RetroTheme.BLACK);
+                PixelFont.drawWithShadow(gc, "<", x + textWidth + pixel * 5 - wiggle, snap(y), pixel, RetroTheme.YELLOW, RetroTheme.BLACK);
+            } else {
+                drawCentered(gc, MENU[i], y, pixel, RetroTheme.LAVENDER, width);
+            }
+        }
+        drawCentered(gc, "FLECHAS PARA ELEGIR - ENTER PARA CONFIRMAR", top + MENU.length * 58 + 6, 2, RetroTheme.LIGHT_GRAY, width);
     }
 
     // Dibuja la fila de edificios con ventanas que se prenden y apagan.

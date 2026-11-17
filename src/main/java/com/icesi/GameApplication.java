@@ -17,6 +17,7 @@ import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
@@ -62,7 +63,13 @@ public class GameApplication extends Application {
         titleScreen = new TitleScreen();
         toasts = new ToastLayer();
         StackPane root = new StackPane(game, toasts, titleScreen.getView());
-        titleScreen.getView().setOnMouseClicked(e -> enterGame());
+        // con el mouse: pasar por encima marca la opcion y el clic la confirma
+        titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
+        titleScreen.getView().setOnMouseClicked(e -> {
+            if (titleScreen.selectAt(e.getY())) {
+                chooseMenuOption();
+            }
+        });
 
         Scene scene = new Scene(root, 1280, 820);
         RetroTheme.apply(scene);
@@ -105,6 +112,15 @@ public class GameApplication extends Application {
         toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
     }
 
+    // Hace lo que dice la opcion marcada del menu de titulo.
+    private void chooseMenuOption() {
+        if (titleScreen.getSelectedOption().equals("SALIR")) {
+            Platform.exit();
+        } else {
+            enterGame();
+        }
+    }
+
     // Genera un incidente nuevo y avisa al jugador (si el juego no esta en pausa).
     private void simulateTick() {
         if (!started || paused) {
@@ -124,8 +140,12 @@ public class GameApplication extends Application {
     // Teclas globales: navegacion entre pantallas; las demas se las pasa a la pantalla actual.
     private void handleKey(KeyCode code) {
         if (!started) {
-            if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
-                enterGame();
+            if (code == KeyCode.UP || code == KeyCode.W) {
+                titleScreen.moveSelection(-1);
+            } else if (code == KeyCode.DOWN || code == KeyCode.S) {
+                titleScreen.moveSelection(1);
+            } else if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
+                chooseMenuOption();
             }
             return;
         }

@@ -12,7 +12,7 @@ public final class PixelFont {
     public static final int GLYPH_WIDTH = 5;
     public static final int GLYPH_HEIGHT = 7;
 
-    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :!-./?>*";
+    private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 :!-./?>*<";
 
     // cada letra son 7 filas de 5 columnas, '#' es un pixel prendido
     private static final String[][] GLYPHS = {
@@ -60,7 +60,8 @@ public final class PixelFont {
             {"    #", "    #", "   # ", "  #  ", " #   ", "#    ", "#    "}, // /
             {" ### ", "#   #", "    #", "   # ", "  #  ", "     ", "  #  "}, // ?
             {" #   ", "  #  ", "   # ", "    #", "   # ", "  #  ", " #   "}, // >
-            {"     ", "# # #", " ### ", "#####", " ### ", "# # #", "     "}  // *
+            {"     ", "# # #", " ### ", "#####", " ### ", "# # #", "     "}, // *
+            {"   # ", "  #  ", " #   ", "#    ", " #   ", "  #  ", "   # "}  // <
     };
 
     private PixelFont() {
