@@ -26,6 +26,10 @@ public final class SpriteRegistry {
     public static final String SHOP = "shop";
     public static final String TREE = "tree";
     public static final String SIREN = "siren";
+    public static final String HOSPITAL = "hospital";
+    public static final String POLICE_STATION = "police_station";
+    public static final String FIRE_STATION = "fire_station";
+    public static final String FOUNTAIN = "fountain";
 
     private static final String IMAGES_FOLDER = "/com/icesi/images/";
 
@@ -204,6 +208,73 @@ public final class SpriteRegistry {
                 "...kkkkk...",
                 "..........."
         });
+        PIXEL_ART.put(HOSPITAL, new String[]{
+                "kkkkkkkkkkk",
+                "kwwwwwwwwwk",
+                "kwwwkrkwwwk",
+                "kwwkkrkkwwk",
+                "kwwrrrrrwwk",
+                "kwwkkrkkwwk",
+                "kwwwkrkwwwk",
+                "kwbwwwwwbwk",
+                "kwbwkkkwbwk",
+                "kwwwkbkwwwk",
+                "kkkkkkkkkkk"
+        });
+        PIXEL_ART.put(POLICE_STATION, new String[]{
+                "....kkk....",
+                "...kbrbk...",
+                "kkkkkkkkkkk",
+                "knnnnnnnnnk",
+                "knwwwwwwwnk",
+                "knwnnwnnwnk",
+                "knwwwwwwwnk",
+                "knnnnnnnnnk",
+                "knlnkkknlnk",
+                "knnnkykknnk",
+                "kkkkkkkkkkk"
+        });
+        PIXEL_ART.put(FIRE_STATION, new String[]{
+                "kkkkkkkkkkk",
+                "krrrrrrrrrk",
+                "krwrwrwrwrk",
+                "krrrrrrrrrk",
+                "kkkkkkkkkkk",
+                "kdlldkdlldk",
+                "kdlldkdlldk",
+                "kdlldkdlldk",
+                "kdlldkdlldk",
+                "kdlldkdlldk",
+                "kkkkkkkkkkk"
+        });
+        PIXEL_ART.put(FOUNTAIN, new String[]{
+                ".kk.....kk.",
+                "kggk...kggk",
+                ".kk..b..kk.",
+                "....bwb....",
+                "..kkbbbkk..",
+                ".klbbwbblk.",
+                ".klbwbbblk.",
+                "..kllllk...",
+                ".kk.....kk.",
+                "kggk...kggk",
+                ".kk.....kk."
+        });
+
+        // variantes de color de las casas y tiendas, para que el barrio no se vea todo igual
+        PIXEL_ART.put(HOUSE + "_purple", recolor(PIXEL_ART.get(HOUSE), 'r', 'u'));
+        PIXEL_ART.put(HOUSE + "_brown", recolor(PIXEL_ART.get(HOUSE), 'r', 'B'));
+        PIXEL_ART.put(SHOP + "_pink", recolor(recolor(PIXEL_ART.get(SHOP), 'o', 'p'), 'y', 'w'));
+        PIXEL_ART.put(SHOP + "_blue", recolor(recolor(PIXEL_ART.get(SHOP), 'o', 'b'), 'y', 'w'));
+    }
+
+    // Copia un sprite cambiando una letra (color) por otra.
+    private static String[] recolor(String[] rows, char from, char to) {
+        String[] copy = new String[rows.length];
+        for (int i = 0; i < rows.length; i++) {
+            copy[i] = rows[i].replace(from, to);
+        }
+        return copy;
     }
 
     private SpriteRegistry() {

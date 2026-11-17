@@ -119,20 +119,52 @@ public class CityRenderer {
                     continue;
                 }
                 blockNumber++;
-                String sprite;
-                if (type == CityMap.COMMERCIAL) {
-                    sprite = SpriteRegistry.SHOP;
-                } else if (type == CityMap.OBSTACLE) {
-                    sprite = SpriteRegistry.TREE;
-                } else if (type == CityMap.RESIDENTIAL) {
-                    // cada tanto un parque entre las casas para que no se vea repetido
-                    sprite = (blockNumber % 5 == 0) ? SpriteRegistry.TREE : SpriteRegistry.HOUSE;
-                } else {
+                String sprite = chooseSprite(type, blockNumber);
+                if (sprite == null) {
                     continue;
                 }
                 SpriteRegistry.draw(gc, sprite, column * cell, row * cell, cell * 3, cell * 3);
             }
         }
+    }
+
+    // Elige que dibujar en la manzana: algunas son edificios especiales (hospital, policia, bomberos)
+    // y las demas alternan colores y parques para que la ciudad se vea variada.
+    private String chooseSprite(int type, int blockNumber) {
+        // edificios especiales: pocos y repartidos por la ciudad
+        if (type == CityMap.RESIDENTIAL || type == CityMap.COMMERCIAL) {
+            if (blockNumber == 38 || blockNumber == 171) {
+                return SpriteRegistry.HOSPITAL;
+            }
+            if (blockNumber == 22 || blockNumber == 118 || blockNumber == 213) {
+                return SpriteRegistry.POLICE_STATION;
+            }
+            if (blockNumber == 75 || blockNumber == 190) {
+                return SpriteRegistry.FIRE_STATION;
+            }
+        }
+        if (type == CityMap.COMMERCIAL) {
+            if (blockNumber % 3 == 1) {
+                return SpriteRegistry.SHOP + "_pink";
+            }
+            return (blockNumber % 3 == 2) ? SpriteRegistry.SHOP + "_blue" : SpriteRegistry.SHOP;
+        }
+        if (type == CityMap.OBSTACLE) {
+            return (blockNumber % 2 == 0) ? SpriteRegistry.FOUNTAIN : SpriteRegistry.TREE;
+        }
+        if (type == CityMap.RESIDENTIAL) {
+            if (blockNumber % 9 == 0) {
+                return SpriteRegistry.FOUNTAIN;
+            }
+            if (blockNumber % 5 == 0) {
+                return SpriteRegistry.TREE;
+            }
+            if (blockNumber % 3 == 1) {
+                return SpriteRegistry.HOUSE + "_purple";
+            }
+            return (blockNumber % 3 == 2) ? SpriteRegistry.HOUSE + "_brown" : SpriteRegistry.HOUSE;
+        }
+        return null;
     }
 
     // Indica si las 9 celdas de la manzana son del mismo tipo.

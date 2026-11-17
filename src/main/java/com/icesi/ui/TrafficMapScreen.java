@@ -15,6 +15,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -228,18 +229,23 @@ public class TrafficMapScreen implements GameScreen {
         gc.fillRect(cx - 1, top + 8, 2, 2);
     }
 
-    // Arma la leyenda con un cuadrito de cada elemento del mapa.
+    // Arma la leyenda en dos columnas con un cuadrito de cada elemento del mapa.
     private VBox createLegend() {
-        VBox legend = new VBox(6, styled(new Label("▶ LEYENDA"), "panel-title"));
-        legend.getChildren().addAll(
-                legendRow(SpriteRegistry.OPERATOR, "OPERADOR (TU)"),
-                legendRow(SpriteRegistry.HOUSE, "ZONA RESIDENCIAL"),
-                legendRow(SpriteRegistry.SHOP, "ZONA COMERCIAL"),
-                legendRow(SpriteRegistry.TREE, "PARQUE / OBSTACULO"),
-                legendRow(SpriteRegistry.FIRE, "INCENDIO"),
-                legendRow(SpriteRegistry.THEFT, "ROBO"),
-                legendRow(SpriteRegistry.ACCIDENT, "ACCIDENTE"),
-                legendRow(SpriteRegistry.PATROL, "PATRULLA / AMBULANCIA / BOMBEROS"));
+        String[][] items = {
+                {SpriteRegistry.OPERATOR, "OPERADOR (TU)"}, {SpriteRegistry.HOUSE, "CASAS"},
+                {SpriteRegistry.SHOP, "COMERCIO"}, {SpriteRegistry.TREE, "PARQUE"},
+                {SpriteRegistry.FOUNTAIN, "PLAZA / FUENTE"}, {SpriteRegistry.HOSPITAL, "HOSPITAL"},
+                {SpriteRegistry.POLICE_STATION, "POLICIA"}, {SpriteRegistry.FIRE_STATION, "BOMBEROS"},
+                {SpriteRegistry.FIRE, "INCENDIO"}, {SpriteRegistry.THEFT, "ROBO"},
+                {SpriteRegistry.ACCIDENT, "ACCIDENTE"}, {SpriteRegistry.PATROL, "UNIDADES"}
+        };
+        GridPane grid = new GridPane();
+        grid.setHgap(18);
+        grid.setVgap(6);
+        for (int i = 0; i < items.length; i++) {
+            grid.add(legendRow(items[i][0], items[i][1]), i % 2, i / 2);
+        }
+        VBox legend = new VBox(8, styled(new Label("▶ LEYENDA"), "panel-title"), grid);
         legend.getStyleClass().add("pixel-panel");
         return legend;
     }
