@@ -110,3 +110,10 @@ Densidad de errores-fallos = 0.0 (0/81)
 Confiabilidad = 1.0
 Completitud = 4.76 (81/17)
 ![Iteración 15](docs/screenshots/iteracion_15.png)
+
+
+PRIMEROS DISEÑOS DE FRONT:
+- Se decidio usar arte pixel art.
+- Primer dieño:
+
+- <img width="1280" height="820" alt="image" src="https://github.com/user-attachments/assets/3b0eb244-5420-4f82-bb0f-8aaf446fb08d" />
