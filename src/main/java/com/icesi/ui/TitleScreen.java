@@ -193,6 +193,31 @@ public class TitleScreen {
         for (double x = -offset; x < width; x += PIXEL * 16) {
             gc.fillRect(snap(x), ground + PIXEL * 2.5, PIXEL * 8, PIXEL);
         }
+
+        drawTraffic(gc, width, ground, time);
+    }
+
+    // Dibuja las patrullas, ambulancias y bomberos que pasan por la avenida con la sirena prendida.
+    private void drawTraffic(GraphicsContext gc, double width, double ground, double time) {
+        String[] vehicles = {SpriteRegistry.PATROL, SpriteRegistry.AMBULANCE, SpriteRegistry.FIRE_TRUCK, SpriteRegistry.PATROL};
+        double speed = 130;                        // pixeles por segundo, todos iguales para que no se choquen
+        double size = PIXEL * 9;
+        double lap = width + size * 2;             // distancia de un lado al otro de la pantalla
+        double gap = lap / vehicles.length;        // separacion entre un carro y el siguiente
+
+        for (int i = 0; i < vehicles.length; i++) {
+            double x = snap((time * speed + i * gap) % lap - size);
+            double y = ground + PIXEL * 6 - size + PIXEL; // las ruedas quedan sobre la calle
+            SpriteRegistry.draw(gc, vehicles[i], x, y, size, size);
+
+            // luz de la sirena: cambia entre rojo y azul varias veces por segundo
+            boolean red = (int) (time * 6 + i) % 2 == 0;
+            gc.setFill(red ? RetroTheme.RED : RetroTheme.BLUE);
+            gc.setGlobalAlpha(0.35);
+            gc.fillRect(x + size / 2 - PIXEL * 3, y - PIXEL * 2, PIXEL * 6, PIXEL * 3);
+            gc.setGlobalAlpha(1);
+            gc.fillRect(x + size / 2 - PIXEL, y, PIXEL * 2, PIXEL);
+        }
     }
 
     private void drawCentered(GraphicsContext gc, String text, double y, double pixel, Color color, double width) {
