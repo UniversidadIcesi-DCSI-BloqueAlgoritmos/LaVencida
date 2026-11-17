@@ -5,6 +5,7 @@ import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MonitoringCenterScreen;
+import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.SpriteRegistry;
@@ -36,6 +37,7 @@ public class GameApplication extends Application {
     private StackPane content;
     private TitleScreen titleScreen;
     private ToastLayer toasts;
+    private StackPane root;
     private MonitoringCenterScreen centerScreen;
     private boolean started;
     private boolean paused;
@@ -62,7 +64,7 @@ public class GameApplication extends Application {
 
         titleScreen = new TitleScreen();
         toasts = new ToastLayer();
-        StackPane root = new StackPane(game, toasts, titleScreen.getView());
+        root = new StackPane(game, toasts, titleScreen.getView());
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -95,21 +97,18 @@ public class GameApplication extends Application {
         titleScreen.start();
     }
 
-    // Quita la pantalla de titulo con un desvanecido y empieza el juego.
+    // Quita la pantalla de titulo con una transicion de cuadros pixelados y empieza el juego.
     private void enterGame() {
         if (started) {
             return;
         }
         started = true;
-        FadeTransition fade = new FadeTransition(Duration.millis(600), titleScreen.getView());
-        fade.setFromValue(1);
-        fade.setToValue(0);
-        fade.setOnFinished(e -> {
+        PixelTransition.play(root, () -> {
+            // esto pasa cuando la pantalla esta toda negra
             titleScreen.stop();
             titleScreen.getView().setVisible(false);
+            toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
         });
-        fade.play();
-        toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
     }
 
     // Hace lo que dice la opcion marcada del menu de titulo.
