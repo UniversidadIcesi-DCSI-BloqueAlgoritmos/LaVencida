@@ -10,9 +10,9 @@ import javafx.scene.layout.Region;
 // Barra superior siempre visible: puntaje, incidentes activos, vehiculos libres y teclas para cambiar de pantalla.
 public class HudBar extends HBox {
 
-    private Label scoreLabel;
-    private Label activeLabel;
-    private Label freeLabel;
+    private CountingLabel scoreLabel;
+    private CountingLabel activeLabel;
+    private CountingLabel freeLabel;
     private Label centerKey;
     private Label mapKey;
     private Label incidentsKey;
@@ -22,9 +22,9 @@ public class HudBar extends HBox {
         getStyleClass().add("hud-bar");
         setAlignment(Pos.CENTER_LEFT);
 
-        scoreLabel = createItem("hud-score");
-        activeLabel = createItem("hud-active");
-        freeLabel = createItem("hud-free");
+        scoreLabel = createItem("♥ SCORE %06d", "hud-score");
+        activeLabel = createItem("★ ACTIVOS %02d", "hud-active");
+        freeLabel = createItem("■ LIBRES %02d", "hud-free");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -39,17 +39,17 @@ public class HudBar extends HBox {
     }
 
     // Crea una etiqueta del HUD con su color.
-    private Label createItem(String colorClass) {
-        Label label = new Label();
+    private CountingLabel createItem(String format, String colorClass) {
+        CountingLabel label = new CountingLabel(format);
         label.getStyleClass().addAll("hud-item", colorClass);
         return label;
     }
 
     // Actualiza los numeros con lo que dice el controlador.
     public void refresh(GameController controller) {
-        scoreLabel.setText(String.format("♥ SCORE %06d", controller.getScore()));
-        activeLabel.setText(String.format("★ ACTIVOS %02d", controller.getActiveIncidentCount()));
-        freeLabel.setText(String.format("■ LIBRES %02d", controller.getAvailableVehicleCount()));
+        scoreLabel.setValue(controller.getScore());
+        activeLabel.setValue(controller.getActiveIncidentCount());
+        freeLabel.setValue(controller.getAvailableVehicleCount());
     }
 
     // Resalta la tecla de la pantalla en la que esta el jugador.

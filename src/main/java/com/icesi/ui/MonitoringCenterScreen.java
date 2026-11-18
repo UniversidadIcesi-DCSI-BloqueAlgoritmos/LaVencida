@@ -29,12 +29,12 @@ public class MonitoringCenterScreen implements GameScreen {
     private Consumer<String> navigator;
     private HBox root;
 
-    private Label scoreValue;
-    private Label activeValue;
-    private Label accidentValue;
-    private Label theftValue;
-    private Label fireValue;
-    private Label freeValue;
+    private CountingLabel scoreValue;
+    private CountingLabel activeValue;
+    private CountingLabel accidentValue;
+    private CountingLabel theftValue;
+    private CountingLabel fireValue;
+    private CountingLabel freeValue;
 
     private VBox priorityBox;
     private VBox fleetBox;
@@ -53,12 +53,13 @@ public class MonitoringCenterScreen implements GameScreen {
                 PixelFont.createLabel("CENTRO DE MONITOREO", 5, RetroTheme.YELLOW, RetroTheme.PURPLE),
                 styled(new Label("SISTEMA DE GESTION Y MONITOREO DE MOVILIDAD Y SEGURIDAD - PALMIRA"), "panel-subtitle"));
 
-        scoreValue = new Label();
-        activeValue = new Label();
-        accidentValue = new Label();
-        theftValue = new Label();
-        fireValue = new Label();
-        freeValue = new Label();
+        // numeros que cuentan hacia arriba o hacia abajo cuando cambian
+        scoreValue = new CountingLabel("%06d");
+        activeValue = new CountingLabel("%02d");
+        accidentValue = new CountingLabel("%02d");
+        theftValue = new CountingLabel("%02d");
+        fireValue = new CountingLabel("%02d");
+        freeValue = new CountingLabel("%02d");
 
         GridPane stats = new GridPane();
         stats.setHgap(16);
@@ -137,12 +138,12 @@ public class MonitoringCenterScreen implements GameScreen {
 
     @Override
     public void refresh() {
-        scoreValue.setText(String.format("%06d", controller.getScore()));
-        activeValue.setText(String.format("%02d", controller.getActiveIncidentCount()));
-        accidentValue.setText(String.format("%02d", controller.getActiveAccidentCount()));
-        theftValue.setText(String.format("%02d", controller.getActiveTheftCount()));
-        fireValue.setText(String.format("%02d", controller.getActiveFireCount()));
-        freeValue.setText(String.format("%02d", controller.getAvailableVehicleCount()));
+        scoreValue.setValue(controller.getScore());
+        activeValue.setValue(controller.getActiveIncidentCount());
+        accidentValue.setValue(controller.getActiveAccidentCount());
+        theftValue.setValue(controller.getActiveTheftCount());
+        fireValue.setValue(controller.getActiveFireCount());
+        freeValue.setValue(controller.getAvailableVehicleCount());
         refreshPriority();
         refreshFleet();
     }
