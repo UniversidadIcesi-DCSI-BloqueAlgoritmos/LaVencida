@@ -36,9 +36,13 @@ public class TrafficMapScreen implements GameScreen {
     private StackPane mapFrame;
     private Canvas cityLayer;
     private Canvas spriteLayer;
+    private Canvas nightLayer;
+    private DayNightCycle dayNight;
+    private Label timeOfDayLabel;
 
     private VehicleAnimator vehicleAnimator;
     private double lastTime = -1;
+    private double startTime = -1; // momento en que empezo el juego, para que el dia arranque de dia
 
     private Label positionLabel;
     private Label stackLabel;
@@ -56,17 +60,21 @@ public class TrafficMapScreen implements GameScreen {
         cityLayer = new Canvas(size * CELL, size * CELL);
         renderer.drawCity(cityLayer.getGraphicsContext2D());
         spriteLayer = new Canvas(size * CELL, size * CELL);
-        mapFrame = new StackPane(cityLayer, spriteLayer);
+        // capa de noche entre la ciudad y los sprites: los incidentes y vehiculos se siguen viendo claros
+        nightLayer = new Canvas(size * CELL, size * CELL);
+        dayNight = new DayNightCycle(controller.getCityMap(), CELL);
+        mapFrame = new StackPane(cityLayer, nightLayer, spriteLayer);
         mapFrame.getStyleClass().add("pixel-panel");
         mapFrame.setPadding(new Insets(4));
         mapFrame.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
 
         positionLabel = styled(new Label(), "incident-id");
         stackLabel = styled(new Label(), "incident-detail");
+        timeOfDayLabel = styled(new Label(), "incident-detail");
         actionLabel = styled(new Label("Usa W A S D o las flechas para patrullar."), "dialog-text");
         actionLabel.setMaxWidth(300);
 
-        VBox infoPanel = new VBox(8, styled(new Label("◆ OPERADOR"), "panel-title"), positionLabel, stackLabel);
+        VBox infoPanel = new VBox(8, styled(new Label("◆ OPERADOR"), "panel-title"), positionLabel, stackLabel, timeOfDayLabel);
         infoPanel.getStyleClass().add("pixel-panel");
 
         VBox dialog = new VBox(actionLabel);
@@ -91,11 +99,17 @@ public class TrafficMapScreen implements GameScreen {
             public void handle(long now) {
                 double time = now / 1_000_000_000.0;
                 // los vehiculos siguen viajando aunque se este viendo otra pantalla
+                if (startTime < 0) {
+                    startTime = time;
+                }
                 double delta = lastTime < 0 ? 0 : Math.min(0.25, time - lastTime);
                 lastTime = time;
                 vehicleAnimator.update(delta);
                 // solo se dibuja cuando la pantalla esta en la ventana
                 if (root.getScene() != null) {
+                    double dayTime = time - startTime;
+                    dayNight.draw(nightLayer.getGraphicsContext2D(), nightLayer.getWidth(), nightLayer.getHeight(), dayTime);
+                    timeOfDayLabel.setText("CIUDAD: " + dayNight.phaseName(dayTime));
                     drawSprites(time);
                 }
             }
