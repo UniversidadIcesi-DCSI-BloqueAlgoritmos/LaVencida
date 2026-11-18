@@ -202,6 +202,8 @@ public class TrafficMapScreen implements GameScreen {
             double spriteSize = CELL * 2.6;
             SpriteRegistry.draw(gc, SpriteRegistry.forIncident(incident.getType()),
                     cx - spriteSize / 2, cy - spriteSize / 2 + bob, spriteSize, spriteSize);
+            // humo, chispas o alarma encima del sprite
+            IncidentEffects.draw(gc, incident.getType(), cx, cy, time, cell[0] + cell[1]);
             drawAlertBubble(gc, cx, cy - spriteSize / 2 - 10 + bob, colorOf(incident.getSeverity()));
         }
 
