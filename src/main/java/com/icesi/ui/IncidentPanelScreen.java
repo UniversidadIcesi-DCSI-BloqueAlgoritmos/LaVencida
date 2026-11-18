@@ -36,6 +36,7 @@ public class IncidentPanelScreen implements GameScreen {
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private GameController controller;
+    private EventLog eventLog;
     private StackPane root;
     private Pane effects;
     private VBox cardList;
@@ -48,8 +49,9 @@ public class IncidentPanelScreen implements GameScreen {
     private String lastSignature = "";
 
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
-    public IncidentPanelScreen(GameController controller) {
+    public IncidentPanelScreen(GameController controller, EventLog eventLog) {
         this.controller = controller;
+        this.eventLog = eventLog;
 
         cardList = new VBox(10);
         ScrollPane scroll = new ScrollPane(cardList);
@@ -209,6 +211,7 @@ public class IncidentPanelScreen implements GameScreen {
         try {
             controller.assignVehicle(vehicle.getId(), selected.getId());
             String message = "¡" + vehicle.getId() + " va en camino a " + selected.getLocation() + "!";
+            eventLog.add(vehicle.getId() + " despachada a " + selected.getId(), EventLog.DISPATCH);
             showIdleDialog();
             dispatchText.setText(message);
             refresh();
@@ -222,6 +225,7 @@ public class IncidentPanelScreen implements GameScreen {
         try {
             int points = controller.resolveIncident(incident.getId());
             dispatchText.setText("¡" + incident.getId() + " resuelto! Ganaste " + points + " puntos.");
+            eventLog.add(incident.getId() + " resuelto  +" + points + " PTS", EventLog.RESOLVED);
             floatPoints(points, source);
             refresh();
         } catch (RuntimeException e) {

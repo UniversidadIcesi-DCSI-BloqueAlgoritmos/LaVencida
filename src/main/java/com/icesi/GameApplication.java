@@ -1,6 +1,7 @@
 package com.icesi;
 
 import com.icesi.controller.GameController;
+import com.icesi.ui.EventLog;
 import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
@@ -39,6 +40,7 @@ public class GameApplication extends Application {
     private ToastLayer toasts;
     private StackPane root;
     private MonitoringCenterScreen centerScreen;
+    private EventLog eventLog = new EventLog();
     private boolean started;
     private boolean paused;
 
@@ -54,10 +56,10 @@ public class GameApplication extends Application {
         hud = new HudBar();
         content = new StackPane();
 
-        centerScreen = new MonitoringCenterScreen(controller, this::showScreen);
+        centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         screens.put("center", centerScreen);
         screens.put("map", new TrafficMapScreen(controller));
-        screens.put("incidents", new IncidentPanelScreen(controller));
+        screens.put("incidents", new IncidentPanelScreen(controller, eventLog));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -108,6 +110,7 @@ public class GameApplication extends Application {
             titleScreen.stop();
             titleScreen.getView().setVisible(false);
             toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
+            eventLog.add("Turno iniciado. Unidades listas.", EventLog.SYSTEM);
         });
     }
 
@@ -130,6 +133,7 @@ public class GameApplication extends Application {
             toasts.show("¡NUEVO " + Texts.of(incident.getType()) + "! " + incident.getId() + " · " + incident.getLocation(),
                     SpriteRegistry.forIncident(incident.getType()));
             centerScreen.showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
+            eventLog.add(Texts.of(incident.getType()) + " " + incident.getId() + " en " + incident.getLocation(), EventLog.ALERT);
             refreshAll();
         } catch (RuntimeException e) {
             toasts.show("Error en la simulacion: " + e.getMessage(), null);
@@ -155,6 +159,7 @@ public class GameApplication extends Application {
         if (code == KeyCode.P) {
             paused = !paused;
             toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
+            eventLog.add(paused ? "Simulacion en pausa." : "Simulacion reanudada.", EventLog.SYSTEM);
             return;
         }
         if (code == KeyCode.C || code == KeyCode.DIGIT1) {

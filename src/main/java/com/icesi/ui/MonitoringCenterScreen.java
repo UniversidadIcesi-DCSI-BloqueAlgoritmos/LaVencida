@@ -39,11 +39,14 @@ public class MonitoringCenterScreen implements GameScreen {
     private VBox priorityBox;
     private VBox fleetBox;
     private Label eventText;
+    private EventLog eventLog;
+    private VBox logLines;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
-    public MonitoringCenterScreen(GameController controller, Consumer<String> navigator) {
+    public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
         this.controller = controller;
         this.navigator = navigator;
+        this.eventLog = eventLog;
 
         VBox left = new VBox(18);
         left.setPadding(new Insets(4));
@@ -94,9 +97,10 @@ public class MonitoringCenterScreen implements GameScreen {
         spawnButton.setOnAction(e -> spawnIncident());
         HBox buttons = new HBox(14, mapButton, incidentsButton, spawnButton);
 
+        // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
-        keys.setHgap(28);
-        keys.setVgap(6);
+        keys.setHgap(10);
+        keys.setVgap(5);
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
@@ -105,12 +109,21 @@ public class MonitoringCenterScreen implements GameScreen {
         for (int i = 0; i < controls.length; i++) {
             Label key = styled(new Label(controls[i][0]), "hud-key-active");
             Label action = styled(new Label(controls[i][1]), "stat-name");
-            keys.add(new HBox(10, key, action), i % 2, i / 2);
+            keys.add(key, 0, i);
+            keys.add(action, 1, i);
         }
         VBox controlsPanel = new VBox(10, styled(new Label("▶ CONTROLES"), "panel-title"), keys);
         controlsPanel.getStyleClass().add("pixel-panel");
 
-        left.getChildren().addAll(header, stats, dialog, buttons, controlsPanel);
+        // registro de eventos tipo consola: las ultimas cosas que pasaron, la mas nueva arriba
+        logLines = new VBox(4);
+        VBox logPanel = new VBox(10, styled(new Label("▶ REGISTRO DE EVENTOS"), "panel-title"), logLines);
+        logPanel.getStyleClass().add("pixel-panel");
+        HBox.setHgrow(logPanel, Priority.ALWAYS);
+        eventLog.setOnChange(this::refreshLog);
+
+        HBox bottom = new HBox(16, controlsPanel, logPanel);
+        left.getChildren().addAll(header, stats, dialog, buttons, bottom);
 
         // columna derecha: el incidente mas urgente y la flota
         priorityBox = new VBox(10);
@@ -146,6 +159,30 @@ public class MonitoringCenterScreen implements GameScreen {
         freeValue.setValue(controller.getAvailableVehicleCount());
         refreshPriority();
         refreshFleet();
+        refreshLog();
+    }
+
+    // Muestra los ultimos eventos del registro con su hora y su color.
+    private void refreshLog() {
+        logLines.getChildren().clear();
+        int shown = 0;
+        for (EventLog.Entry entry : eventLog.getEntries()) {
+            if (shown == 6) {
+                break;
+            }
+            Label time = styled(new Label(entry.getTime()), "stat-name");
+            Label text = styled(new Label(entry.getText()), "incident-detail");
+            // se usa estilo en linea porque la hoja de estilos le gana a setTextFill
+            text.setStyle("-fx-text-fill: " + toHex(entry.getColor()) + ";");
+            // los eventos viejos se ven mas apagados
+            HBox line = new HBox(8, time, text);
+            line.setOpacity(1 - shown * 0.12);
+            logLines.getChildren().add(line);
+            shown++;
+        }
+        if (shown == 0) {
+            logLines.getChildren().add(styled(new Label("Sin eventos todavia."), "incident-detail"));
+        }
     }
 
     @Override
@@ -166,6 +203,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private void spawnIncident() {
         Incident incident = controller.spawnRandomIncident();
         showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
+        eventLog.add(Texts.of(incident.getType()) + " " + incident.getId() + " en " + incident.getLocation(), EventLog.ALERT);
         refresh();
     }
 
@@ -212,6 +250,12 @@ public class MonitoringCenterScreen implements GameScreen {
         VBox card = new VBox(top, styled(new Label(name), "stat-name"));
         card.getStyleClass().add("stat-card");
         return card;
+    }
+
+    // Convierte un color a texto "#rrggbb" para usarlo en los estilos.
+    static String toHex(javafx.scene.paint.Color color) {
+        return String.format("#%02x%02x%02x", (int) Math.round(color.getRed() * 255),
+                (int) Math.round(color.getGreen() * 255), (int) Math.round(color.getBlue() * 255));
     }
 
     static Label severityBadge(Severity severity) {
