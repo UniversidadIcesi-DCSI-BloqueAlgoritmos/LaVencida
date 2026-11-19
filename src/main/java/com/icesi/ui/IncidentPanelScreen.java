@@ -126,6 +126,9 @@ public class IncidentPanelScreen implements GameScreen {
         if (compact != value) {
             compact = value;
             arrangeLayout();
+            // las tarjetas se vuelven a armar con el tamano nuevo
+            lastSignature = "";
+            refresh();
         }
     }
 
@@ -208,13 +211,22 @@ public class IncidentPanelScreen implements GameScreen {
         Label type = styled(new Label(Texts.of(incident.getType())), "incident-detail");
         Label status = styled(new Label(Texts.of(incident.getStatus())), "badge");
         status.getStyleClass().add("badge-status");
-        HBox titleRow = new HBox(8, id, severityBadge(incident.getSeverity()), status, type);
+        HBox titleRow = new HBox(8, id, severityBadge(incident.getSeverity()), status);
+        if (!compact) {
+            titleRow.getChildren().add(type);
+        }
         titleRow.setAlignment(Pos.CENTER_LEFT);
+        // los textos de la fila de arriba nunca se cortan con "..."
+        for (Node node : titleRow.getChildren()) {
+            ((Region) node).setMinWidth(Region.USE_PREF_SIZE);
+        }
 
         String vehicleText = incident.getAssignedVehicle() == null ? "SIN ASIGNAR" : incident.getAssignedVehicle().getId();
         String time = incident.getGeneratedAt() == null ? "--:--:--" : incident.getGeneratedAt().format(TIME);
+        // en modo compacto el tipo va junto al lugar para ahorrar espacio
+        String place = compact ? Texts.of(incident.getType()) + " · " + incident.getLocation() : incident.getLocation();
         VBox info = new VBox(4, titleRow,
-                styled(new Label("◆ " + incident.getLocation()), "incident-detail"),
+                styled(new Label("◆ " + place), "incident-detail"),
                 styled(new Label("HORA " + time + "   UNIDAD: " + vehicleText), "incident-detail"));
         if (isTop) {
             info.getChildren().add(0, styled(new Label("★ MAYOR PRIORIDAD"), "hud-key-active"));
@@ -232,7 +244,9 @@ public class IncidentPanelScreen implements GameScreen {
             action.setOnAction(e -> resolve(incident, action));
         }
 
-        HBox card = new HBox(14, SpriteRegistry.createIcon(SpriteRegistry.forIncident(incident.getType()), 48), info, push, action);
+        action.setMinWidth(Region.USE_PREF_SIZE);
+        int iconSize = compact ? 32 : 48;
+        HBox card = new HBox(compact ? 10 : 14, SpriteRegistry.createIcon(SpriteRegistry.forIncident(incident.getType()), iconSize), info, push, action);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("incident-card");
         if (isTop) {

@@ -13,6 +13,7 @@ import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
+import com.icesi.ui.SplitViewScreen;
 import com.icesi.ui.SpriteRegistry;
 import com.icesi.ui.Texts;
 import com.icesi.ui.ToastLayer;
@@ -65,7 +66,9 @@ public class GameApplication extends Application {
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         screens.put("center", centerScreen);
         screens.put("map", new TrafficMapScreen(controller, mapView));
-        screens.put("incidents", new IncidentPanelScreen(controller, eventLog));
+        IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
+        screens.put("incidents", incidentPanel);
+        screens.put("split", new SplitViewScreen(controller, mapView, incidentPanel));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -190,6 +193,8 @@ public class GameApplication extends Application {
             showScreen("map");
         } else if (code == KeyCode.I || code == KeyCode.DIGIT3) {
             showScreen("incidents");
+        } else if (code == KeyCode.DIGIT4) {
+            showScreen("split");
         }
     }
 

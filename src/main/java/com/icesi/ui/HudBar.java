@@ -18,6 +18,7 @@ public class HudBar extends HBox {
     private Label centerKey;
     private Label mapKey;
     private Label incidentsKey;
+    private Label splitKey;
 
     // Arma la barra con sus etiquetas.
     public HudBar() {
@@ -36,9 +37,10 @@ public class HudBar extends HBox {
         centerKey = new Label("[C] CENTRO");
         mapKey = new Label("[M] MAPA");
         incidentsKey = new Label("[I] INCIDENTES");
+        splitKey = new Label("[4] MAPA+INC");
 
         getChildren().addAll(PixelFont.createLabel("SGMMS", 3, RetroTheme.YELLOW, RetroTheme.PURPLE),
-                scoreLabel, activeLabel, freeLabel, alertMeter, spacer, soundLabel, centerKey, mapKey, incidentsKey);
+                scoreLabel, activeLabel, freeLabel, alertMeter, spacer, soundLabel, centerKey, mapKey, incidentsKey, splitKey);
         setActiveScreen("center");
 
         // ningun texto del HUD se puede encoger: si falta espacio se achica el hueco del medio
@@ -72,6 +74,7 @@ public class HudBar extends HBox {
         markKey(centerKey, screen.equals("center"));
         markKey(mapKey, screen.equals("map"));
         markKey(incidentsKey, screen.equals("incidents"));
+        markKey(splitKey, screen.equals("split"));
     }
 
     private void markKey(Label key, boolean active) {
