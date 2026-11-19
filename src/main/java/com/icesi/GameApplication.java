@@ -1,6 +1,7 @@
 package com.icesi;
 
 import com.icesi.controller.GameController;
+import com.icesi.ui.CityMapView;
 import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
 import com.icesi.ui.GameScreen;
@@ -59,9 +60,11 @@ public class GameApplication extends Application {
         hud = new HudBar();
         content = new StackPane();
 
+        // el mapa se crea una sola vez para que los vehiculos y el dia sean los mismos en todas las pantallas
+        CityMapView mapView = new CityMapView(controller);
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         screens.put("center", centerScreen);
-        screens.put("map", new TrafficMapScreen(controller));
+        screens.put("map", new TrafficMapScreen(controller, mapView));
         screens.put("incidents", new IncidentPanelScreen(controller, eventLog));
 
         BorderPane game = new BorderPane(content);
