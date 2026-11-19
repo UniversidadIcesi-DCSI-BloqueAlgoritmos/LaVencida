@@ -13,6 +13,7 @@ public class HudBar extends HBox {
     private CountingLabel scoreLabel;
     private CountingLabel activeLabel;
     private CountingLabel freeLabel;
+    private AlertMeter alertMeter;
     private Label centerKey;
     private Label mapKey;
     private Label incidentsKey;
@@ -25,6 +26,7 @@ public class HudBar extends HBox {
         scoreLabel = createItem("♥ SCORE %06d", "hud-score");
         activeLabel = createItem("★ ACTIVOS %02d", "hud-active");
         freeLabel = createItem("■ LIBRES %02d", "hud-free");
+        alertMeter = new AlertMeter();
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -34,8 +36,15 @@ public class HudBar extends HBox {
         incidentsKey = new Label("[I] INCIDENTES");
 
         getChildren().addAll(PixelFont.createLabel("SGMMS", 3, RetroTheme.YELLOW, RetroTheme.PURPLE),
-                scoreLabel, activeLabel, freeLabel, spacer, centerKey, mapKey, incidentsKey);
+                scoreLabel, activeLabel, freeLabel, alertMeter, spacer, centerKey, mapKey, incidentsKey);
         setActiveScreen("center");
+
+        // ningun texto del HUD se puede encoger: si falta espacio se achica el hueco del medio
+        for (javafx.scene.Node child : getChildren()) {
+            if (child instanceof Region region && region != spacer) {
+                region.setMinWidth(Region.USE_PREF_SIZE);
+            }
+        }
     }
 
     // Crea una etiqueta del HUD con su color.
@@ -50,6 +59,7 @@ public class HudBar extends HBox {
         scoreLabel.setValue(controller.getScore());
         activeLabel.setValue(controller.getActiveIncidentCount());
         freeLabel.setValue(controller.getAvailableVehicleCount());
+        alertMeter.setActiveIncidents(controller.getActiveIncidentCount());
     }
 
     // Resalta la tecla de la pantalla en la que esta el jugador.
