@@ -160,7 +160,7 @@ public class IncidentPanelScreen implements GameScreen {
             dispatchBox.setMinWidth(0);
             dispatchBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
             VBox layout = new VBox(12, left, dispatchBox);
-            layout.setPadding(new Insets(8, 16, 8, 0));
+            layout.setPadding(new Insets(6, 0, 8, 0));
             layoutSlot.getChildren().setAll(layout);
         } else {
             left.getChildren().set(0, fullTitle);

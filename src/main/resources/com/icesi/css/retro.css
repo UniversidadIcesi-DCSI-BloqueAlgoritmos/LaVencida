@@ -251,3 +251,26 @@
     -fx-border-width: 2;
     -fx-padding: 2;
 }
+
+/* barra fina del operador encima de los incidentes */
+.operator-bar {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 2;
+    -fx-padding: 6 10 6 10;
+}
+
+.operator-bar-item {
+    -fx-font-size: 12px;
+    -fx-text-fill: #fff1e8;
+}
+
+.operator-bar-icon {
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffec27;
+}
+
+.button-small {
+    -fx-font-size: 11px;
+    -fx-padding: 4 8 4 8;
+}
