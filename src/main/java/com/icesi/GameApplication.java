@@ -7,6 +7,7 @@ import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MonitoringCenterScreen;
+import com.icesi.ui.PixelCursor;
 import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
@@ -80,6 +81,7 @@ public class GameApplication extends Application {
 
         Scene scene = new Scene(root, 1280, 820);
         RetroTheme.apply(scene);
+        PixelCursor.install(scene);
         scene.setOnKeyPressed(e -> handleKey(e.getCode()));
 
         showScreen("center");

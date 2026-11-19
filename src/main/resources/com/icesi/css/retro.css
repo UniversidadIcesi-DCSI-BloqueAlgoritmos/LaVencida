@@ -100,7 +100,6 @@
     -fx-border-color: #000000;
     -fx-border-width: 3;
     -fx-padding: 8 16 8 16;
-    -fx-cursor: hand;
     -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 4, 4);
 }
 
