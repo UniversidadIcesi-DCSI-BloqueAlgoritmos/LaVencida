@@ -201,6 +201,7 @@ public class IncidentPanelScreen implements GameScreen {
 
     // Abre la caja de dialogo para elegir que vehiculo enviar al incidente.
     private void openDispatch(Incident incident) {
+        RetroSound.play(RetroSound.Effect.MENU);
         selected = incident;
         dispatchOptions.getChildren().clear();
 
@@ -254,6 +255,7 @@ public class IncidentPanelScreen implements GameScreen {
             controller.assignVehicle(vehicle.getId(), selected.getId());
             String message = "¡" + vehicle.getId() + " va en camino a " + selected.getLocation() + "!";
             eventLog.add(vehicle.getId() + " despachada a " + selected.getId(), EventLog.DISPATCH);
+            RetroSound.play(RetroSound.Effect.DISPATCH);
             showIdleDialog();
             dispatchText.setText(message);
             refresh();
@@ -309,6 +311,7 @@ public class IncidentPanelScreen implements GameScreen {
             exit.play();
             dispatchText.setText("¡" + incident.getId() + " resuelto! Ganaste " + points + " puntos.");
             eventLog.add(incident.getId() + " resuelto  +" + points + " PTS", EventLog.RESOLVED);
+            RetroSound.play(RetroSound.Effect.RESOLVE);
             floatPoints(points, source);
         } catch (RuntimeException e) {
             showError(e.getMessage());
@@ -317,6 +320,7 @@ public class IncidentPanelScreen implements GameScreen {
 
     // Muestra el error del modelo en la caja de dialogo sin cerrar el juego.
     private void showError(String message) {
+        RetroSound.play(RetroSound.Effect.ERROR);
         dispatchText.setText("✕ ¡ERROR! " + message + ".\nIntenta con otra unidad.");
     }
 

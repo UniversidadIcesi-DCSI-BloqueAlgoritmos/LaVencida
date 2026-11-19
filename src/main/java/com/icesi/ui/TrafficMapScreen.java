@@ -153,6 +153,7 @@ public class TrafficMapScreen implements GameScreen {
             actionLabel.setText("Patrullando... " + describe(direction) + ".");
         } else {
             actionLabel.setText("¡BLOQUEADO! No puedes pasar por ahi.");
+            RetroSound.play(RetroSound.Effect.ERROR);
             shake();
         }
         refresh();

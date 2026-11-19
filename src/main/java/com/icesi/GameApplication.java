@@ -9,6 +9,7 @@ import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MonitoringCenterScreen;
 import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
+import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.SpriteRegistry;
 import com.icesi.ui.Texts;
@@ -107,6 +108,7 @@ public class GameApplication extends Application {
             return;
         }
         started = true;
+        RetroSound.play(RetroSound.Effect.START);
         PixelTransition.play(root, () -> {
             // esto pasa cuando la pantalla esta toda negra
             titleScreen.stop();
@@ -132,6 +134,7 @@ public class GameApplication extends Application {
         }
         try {
             Incident incident = controller.spawnRandomIncident();
+            RetroSound.play(RetroSound.Effect.ALERT);
             toasts.show("¡NUEVO " + Texts.of(incident.getType()) + "! " + incident.getId() + " · " + incident.getLocation(),
                     SpriteRegistry.forIncident(incident.getType()));
             centerScreen.showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
@@ -147,8 +150,10 @@ public class GameApplication extends Application {
         if (!started) {
             if (code == KeyCode.UP || code == KeyCode.W) {
                 titleScreen.moveSelection(-1);
+                RetroSound.play(RetroSound.Effect.MENU);
             } else if (code == KeyCode.DOWN || code == KeyCode.S) {
                 titleScreen.moveSelection(1);
+                RetroSound.play(RetroSound.Effect.MENU);
             } else if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
                 chooseMenuOption();
             }
@@ -156,6 +161,16 @@ public class GameApplication extends Application {
         }
         if (currentScreen != null && currentScreen.handleKey(code)) {
             refreshAll();
+            return;
+        }
+        if (code == KeyCode.N) {
+            // N prende o apaga los sonidos
+            boolean muted = RetroSound.toggleMute();
+            hud.refresh(controller);
+            toasts.show(muted ? "SONIDO APAGADO  [N] para prender" : "SONIDO PRENDIDO", null);
+            if (!muted) {
+                RetroSound.play(RetroSound.Effect.MENU);
+            }
             return;
         }
         if (code == KeyCode.P) {

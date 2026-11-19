@@ -101,11 +101,12 @@ public class MonitoringCenterScreen implements GameScreen {
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
         keys.setHgap(10);
-        keys.setVgap(5);
+        keys.setVgap(2);
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
-                {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"}
+                {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
+                {"N", "SONIDO ON / OFF"}
         };
         for (int i = 0; i < controls.length; i++) {
             Label key = styled(new Label(controls[i][0]), "hud-key-active");
@@ -149,7 +150,7 @@ public class MonitoringCenterScreen implements GameScreen {
         right.setPrefWidth(360);
 
         root = new HBox(24, left, right);
-        root.setPadding(new Insets(24));
+        root.setPadding(new Insets(16, 24, 16, 24));
         root.getStyleClass().add("crt-background");
         refresh();
     }
@@ -224,6 +225,7 @@ public class MonitoringCenterScreen implements GameScreen {
     // Genera un incidente aleatorio y lo cuenta en la caja de dialogo.
     private void spawnIncident() {
         Incident incident = controller.spawnRandomIncident();
+        RetroSound.play(RetroSound.Effect.ALERT);
         showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
         eventLog.add(Texts.of(incident.getType()) + " " + incident.getId() + " en " + incident.getLocation(), EventLog.ALERT);
         refresh();
