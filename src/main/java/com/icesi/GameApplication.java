@@ -18,7 +18,6 @@ import com.icesi.ui.SpriteRegistry;
 import com.icesi.ui.Texts;
 import com.icesi.ui.ToastLayer;
 import com.icesi.ui.TitleScreen;
-import com.icesi.ui.TrafficMapScreen;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -65,14 +64,14 @@ public class GameApplication extends Application {
         CityMapView mapView = new CityMapView(controller);
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         screens.put("center", centerScreen);
-        screens.put("map", new TrafficMapScreen(controller, mapView));
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
         incidentPanel.setOnFocus(mapView::setFocusedIncident);
         // solo se puede resolver cuando la unidad ya llego en el mapa
         incidentPanel.setArrivalCheck(mapView::hasArrived);
-        screens.put("split", new SplitViewScreen(controller, mapView, incidentPanel));
+        // el Mapa de Trafico muestra la ciudad y al lado los incidentes para despachar sin cambiar de pantalla
+        screens.put("map", new SplitViewScreen(controller, mapView, incidentPanel));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -197,8 +196,6 @@ public class GameApplication extends Application {
             showScreen("map");
         } else if (code == KeyCode.I || code == KeyCode.DIGIT3) {
             showScreen("incidents");
-        } else if (code == KeyCode.DIGIT4) {
-            showScreen("split");
         }
     }
 

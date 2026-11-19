@@ -17,7 +17,7 @@ import javafx.scene.layout.VBox;
 import static com.icesi.ui.MonitoringCenterScreen.pixelButton;
 import static com.icesi.ui.MonitoringCenterScreen.styled;
 
-// Vista dividida: el mapa a la izquierda y el panel de incidentes a la derecha,
+// Mapa de Trafico: el mapa a la izquierda y el panel de incidentes a la derecha,
 // para despachar y resolver mientras se mira lo que pasa en la ciudad.
 public class SplitViewScreen implements GameScreen {
 
