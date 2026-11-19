@@ -41,6 +41,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private Label eventText;
     private EventLog eventLog;
     private VBox logLines;
+    private MiniMap miniMap;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -130,11 +131,20 @@ public class MonitoringCenterScreen implements GameScreen {
         VBox priorityPanel = new VBox(10, styled(new Label("★ MAYOR PRIORIDAD"), "panel-title"), priorityBox);
         priorityPanel.getStyleClass().add("pixel-panel");
 
-        fleetBox = new VBox(6);
+        fleetBox = new VBox(2);
         VBox fleetPanel = new VBox(10, styled(new Label("■ FLOTA"), "panel-title"), fleetBox);
         fleetPanel.getStyleClass().add("pixel-panel");
 
-        VBox right = new VBox(18, priorityPanel, fleetPanel);
+        // mini-mapa con la leyenda de colores abajo
+        miniMap = new MiniMap(controller);
+        HBox miniLegend = new HBox(10, legendDot(RetroTheme.YELLOW, "TU"), legendDot(RetroTheme.BLUE, "UNIDAD"),
+                legendDot(RetroTheme.RED, "ALTA"), legendDot(RetroTheme.ORANGE, "MEDIA"), legendDot(RetroTheme.GREEN, "BAJA"));
+        HBox miniCenter = new HBox(miniMap);
+        miniCenter.setAlignment(Pos.CENTER);
+        VBox miniPanel = new VBox(10, styled(new Label("◆ MINI-MAPA"), "panel-title"), miniCenter, miniLegend);
+        miniPanel.getStyleClass().add("pixel-panel");
+
+        VBox right = new VBox(14, priorityPanel, fleetPanel, miniPanel);
         right.setMinWidth(360);
         right.setPrefWidth(360);
 
@@ -160,6 +170,18 @@ public class MonitoringCenterScreen implements GameScreen {
         refreshPriority();
         refreshFleet();
         refreshLog();
+        miniMap.draw();
+    }
+
+    // Cuadrito de color con su nombre, para la leyenda del mini-mapa.
+    private HBox legendDot(javafx.scene.paint.Color color, String text) {
+        Region dot = new Region();
+        dot.setMinSize(8, 8);
+        dot.setMaxSize(8, 8);
+        dot.setStyle("-fx-background-color: " + toHex(color) + ";");
+        HBox item = new HBox(4, dot, styled(new Label(text), "stat-name"));
+        item.setAlignment(Pos.CENTER_LEFT);
+        return item;
     }
 
     // Muestra los ultimos eventos del registro con su hora y su color.
@@ -235,7 +257,7 @@ public class MonitoringCenterScreen implements GameScreen {
             status.getStyleClass().add(vehicle.getStatus() == VehicleStatus.AVAILABLE ? "badge-low" : "badge-status");
             Region push = new Region();
             HBox.setHgrow(push, Priority.ALWAYS);
-            HBox row = new HBox(10, SpriteRegistry.createIcon(SpriteRegistry.forVehicle(vehicle.getType()), 28), name, push, status);
+            HBox row = new HBox(10, SpriteRegistry.createIcon(SpriteRegistry.forVehicle(vehicle.getType()), 24), name, push, status);
             row.setAlignment(Pos.CENTER_LEFT);
             fleetBox.getChildren().add(row);
         }
