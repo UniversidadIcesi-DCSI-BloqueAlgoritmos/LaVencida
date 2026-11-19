@@ -59,6 +59,14 @@ public class IncidentPanelScreen implements GameScreen {
     private EmptyStateView emptyState;
     private boolean cardLeaving; // mientras una tarjeta sale volando no se redibuja la lista
 
+    // modo compacto: el despacho va debajo de la lista para que quepa al lado del mapa
+    private boolean compact;
+    private StackPane layoutSlot;
+    private VBox left;
+    private Node fullTitle;
+    private Node compactTitle;
+    private Label subtitle;
+
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
     public IncidentPanelScreen(GameController controller, EventLog eventLog) {
         this.controller = controller;
@@ -70,11 +78,12 @@ public class IncidentPanelScreen implements GameScreen {
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
-        VBox left = new VBox(14,
-                PixelFont.createLabel("PANEL DE INCIDENTES", 5, RetroTheme.YELLOW, RetroTheme.PURPLE),
-                styled(new Label("ORDENADOS POR GRAVEDAD (ALTA > MEDIA > BAJA) Y ANTIGUEDAD - ARBOL BINARIO DE BUSQUEDA"), "panel-subtitle"),
-                scroll);
+        fullTitle = PixelFont.createLabel("PANEL DE INCIDENTES", 5, RetroTheme.YELLOW, RetroTheme.PURPLE);
+        compactTitle = PixelFont.createLabel("INCIDENTES", 3, RetroTheme.YELLOW, RetroTheme.PURPLE);
+        subtitle = styled(new Label("ORDENADOS POR GRAVEDAD (ALTA > MEDIA > BAJA) Y ANTIGUEDAD - ARBOL BINARIO DE BUSQUEDA"), "panel-subtitle");
+        left = new VBox(14, fullTitle, subtitle, scroll);
         HBox.setHgrow(left, Priority.ALWAYS);
+        VBox.setVgrow(left, Priority.ALWAYS);
 
         dispatchText = styled(new Label(), "dialog-text");
         dispatchText.setMaxWidth(340);
@@ -85,15 +94,14 @@ public class IncidentPanelScreen implements GameScreen {
         dispatchBox.setMinWidth(380);
         showIdleDialog();
 
-        VBox right = new VBox(16, dispatchBox);
-        HBox layout = new HBox(24, left, right);
-        layout.setPadding(new Insets(20, 24, 20, 24));
-        layout.getStyleClass().add("crt-background");
+        layoutSlot = new StackPane();
+        layoutSlot.getStyleClass().add("crt-background");
+        arrangeLayout();
 
         // capa transparente encima para los "+120 PTS" que flotan
         effects = new Pane();
         effects.setMouseTransparent(true);
-        root = new StackPane(layout, effects);
+        root = new StackPane(layoutSlot, effects);
 
         // las tarjetas de gravedad ALTA titilan en rojo para que se vean urgentes
         Timeline pulse = new Timeline(new KeyFrame(Duration.millis(450), e -> pulseHighCards()));
@@ -104,7 +112,44 @@ public class IncidentPanelScreen implements GameScreen {
 
     @Override
     public Node getView() {
+        setCompact(false);
         return root;
+    }
+
+    // La misma pantalla pero angosta, para ponerla al lado del mapa en la vista dividida.
+    public Node getCompactView() {
+        setCompact(true);
+        return root;
+    }
+
+    private void setCompact(boolean value) {
+        if (compact != value) {
+            compact = value;
+            arrangeLayout();
+        }
+    }
+
+    // Normal: lista a la izquierda y despacho a la derecha. Compacto: despacho debajo de la lista.
+    private void arrangeLayout() {
+        if (compact) {
+            left.getChildren().set(0, compactTitle);
+            subtitle.setVisible(false);
+            subtitle.setManaged(false);
+            dispatchBox.setMinWidth(0);
+            dispatchBox.setPrefWidth(Region.USE_COMPUTED_SIZE);
+            VBox layout = new VBox(12, left, dispatchBox);
+            layout.setPadding(new Insets(8, 16, 8, 0));
+            layoutSlot.getChildren().setAll(layout);
+        } else {
+            left.getChildren().set(0, fullTitle);
+            subtitle.setVisible(true);
+            subtitle.setManaged(true);
+            dispatchBox.setPrefWidth(380);
+            dispatchBox.setMinWidth(380);
+            HBox layout = new HBox(24, left, new VBox(16, dispatchBox));
+            layout.setPadding(new Insets(20, 24, 20, 24));
+            layoutSlot.getChildren().setAll(layout);
+        }
     }
 
     @Override
