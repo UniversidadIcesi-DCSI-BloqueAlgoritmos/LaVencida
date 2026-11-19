@@ -150,7 +150,7 @@ public class MonitoringCenterScreen implements GameScreen {
 
         root = new HBox(24, left, right);
         root.setPadding(new Insets(24));
-        root.setStyle("-fx-background-color: #000000;");
+        root.getStyleClass().add("crt-background");
         refresh();
     }
 

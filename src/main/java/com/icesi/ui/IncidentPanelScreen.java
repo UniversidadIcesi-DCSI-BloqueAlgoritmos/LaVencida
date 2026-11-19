@@ -77,7 +77,7 @@ public class IncidentPanelScreen implements GameScreen {
         VBox right = new VBox(16, dispatchBox);
         HBox layout = new HBox(24, left, right);
         layout.setPadding(new Insets(20, 24, 20, 24));
-        layout.setStyle("-fx-background-color: #000000;");
+        layout.getStyleClass().add("crt-background");
 
         // capa transparente encima para los "+120 PTS" que flotan
         effects = new Pane();

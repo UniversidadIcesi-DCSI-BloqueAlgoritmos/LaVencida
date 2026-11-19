@@ -217,3 +217,8 @@
 .scroll-bar .increment-button, .scroll-bar .decrement-button {
     -fx-padding: 0;
 }
+
+/* fondo de las pantallas: azul muy oscuro que brilla un poco en el centro, como un monitor CRT */
+.crt-background {
+    -fx-background-color: radial-gradient(center 50% 45%, radius 80%, #161a40 0%, #0a0c22 55%, #040510 100%);
+}

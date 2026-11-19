@@ -1,6 +1,7 @@
 package com.icesi;
 
 import com.icesi.controller.GameController;
+import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
 import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
@@ -66,7 +67,8 @@ public class GameApplication extends Application {
 
         titleScreen = new TitleScreen();
         toasts = new ToastLayer();
-        root = new StackPane(game, toasts, titleScreen.getView());
+        // la capa CRT va encima de todo para que se vea como un monitor viejo
+        root = new StackPane(game, toasts, titleScreen.getView(), new CrtOverlay());
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {

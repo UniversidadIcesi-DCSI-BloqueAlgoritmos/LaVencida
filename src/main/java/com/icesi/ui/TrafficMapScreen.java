@@ -92,7 +92,7 @@ public class TrafficMapScreen implements GameScreen {
         root = new HBox(24, mapFrame, right);
         root.setPadding(new Insets(8, 24, 8, 24));
         root.setAlignment(Pos.TOP_LEFT);
-        root.setStyle("-fx-background-color: #000000;");
+        root.getStyleClass().add("crt-background");
 
         AnimationTimer timer = new AnimationTimer() {
             @Override
