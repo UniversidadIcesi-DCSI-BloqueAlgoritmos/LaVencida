@@ -84,6 +84,11 @@ public class CityMapView {
         return phaseName;
     }
 
+    // Indica si el vehiculo ya llego en el mapa (el panel lo usa para dejar resolver).
+    public boolean hasArrived(Vehicle vehicle) {
+        return vehicleAnimator.hasArrived(vehicle);
+    }
+
     // Marca el incidente que se eligio en el panel (null para no resaltar ninguno).
     public void setFocusedIncident(String incidentId) {
         focusedIncidentId = incidentId;

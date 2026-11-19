@@ -63,6 +63,18 @@ public class VehicleAnimator {
         return trip != null && trip.progress < trip.route.size() - 1;
     }
 
+    // Indica si el vehiculo ya llego al lugar donde lo mandaron (se considera cuando ya termino su ruta).
+    public boolean hasArrived(Vehicle vehicle) {
+        Trip trip = trips.get(vehicle.getId());
+        if (trip == null) {
+            return false;
+        }
+        // si lo acaban de asignar y el viaje aun no se actualizo, el destino todavia es el viejo
+        int[] target = controller.getCellOf(vehicle);
+        boolean sameTarget = trip.target[0] == target[0] && trip.target[1] == target[1];
+        return sameTarget && !isMoving(vehicle);
+    }
+
     // Un viaje: la ruta por las calles, el destino y cuantas celdas lleva recorridas.
     private static class Trip {
         private LinkedList<int[]> route;
