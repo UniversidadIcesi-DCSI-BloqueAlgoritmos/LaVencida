@@ -56,6 +56,7 @@ public class IncidentPanelScreen implements GameScreen {
     // incidentes que ya tienen tarjeta en pantalla: los nuevos entran con animacion
     private Set<String> shownIds = new HashSet<>();
     private boolean pulseOn;
+    private EmptyStateView emptyState;
     private boolean cardLeaving; // mientras una tarjeta sale volando no se redibuja la lista
 
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
@@ -131,10 +132,11 @@ public class IncidentPanelScreen implements GameScreen {
         }
         shownIds = currentIds;
         if (cardList.getChildren().isEmpty()) {
-            Label empty = styled(new Label("No hay incidentes activos.\nVe al Centro de Monitoreo y presiona [G] para simular uno."), "dialog-text");
-            VBox box = new VBox(empty);
-            box.getStyleClass().add("pixel-panel");
-            cardList.getChildren().add(box);
+            // sin incidentes: se muestra el operador descansando en vez de una lista vacia
+            if (emptyState == null) {
+                emptyState = new EmptyStateView();
+            }
+            cardList.getChildren().add(emptyState);
         }
     }
 
