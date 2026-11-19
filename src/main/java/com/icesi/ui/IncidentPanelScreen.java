@@ -31,6 +31,7 @@ import javafx.util.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static com.icesi.ui.MonitoringCenterScreen.pixelButton;
 import static com.icesi.ui.MonitoringCenterScreen.severityBadge;
@@ -66,6 +67,9 @@ public class IncidentPanelScreen implements GameScreen {
     private Node fullTitle;
     private Node compactTitle;
     private Label subtitle;
+
+    // avisa a quien le interese (el mapa) cual incidente se eligio; null si ninguno
+    private Consumer<String> onFocus = id -> { };
 
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
     public IncidentPanelScreen(GameController controller, EventLog eventLog) {
@@ -108,6 +112,11 @@ public class IncidentPanelScreen implements GameScreen {
         pulse.setCycleCount(Animation.INDEFINITE);
         pulse.play();
         refresh();
+    }
+
+    // El mapa usa esto para resaltar el incidente elegido.
+    public void setOnFocus(Consumer<String> onFocus) {
+        this.onFocus = onFocus;
     }
 
     @Override
@@ -192,6 +201,7 @@ public class IncidentPanelScreen implements GameScreen {
     public boolean handleKey(KeyCode code) {
         if (code == KeyCode.ESCAPE && selected != null) {
             showIdleDialog();
+            onFocus.accept(null);
             return true;
         }
         if (code == KeyCode.ENTER && selected != null) {
@@ -249,6 +259,8 @@ public class IncidentPanelScreen implements GameScreen {
         HBox card = new HBox(compact ? 10 : 14, SpriteRegistry.createIcon(SpriteRegistry.forIncident(incident.getType()), iconSize), info, push, action);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("incident-card");
+        // clic en la tarjeta: se resalta ese incidente en el mapa
+        card.setOnMouseClicked(e -> onFocus.accept(incident.getId()));
         if (isTop) {
             card.getStyleClass().add("incident-card-top");
         }
@@ -262,6 +274,7 @@ public class IncidentPanelScreen implements GameScreen {
     private void openDispatch(Incident incident) {
         RetroSound.play(RetroSound.Effect.MENU);
         selected = incident;
+        onFocus.accept(incident.getId());
         dispatchOptions.getChildren().clear();
 
         String suggestion;
@@ -290,7 +303,10 @@ public class IncidentPanelScreen implements GameScreen {
             }
         }
         Button cancel = pixelButton("✕ CANCELAR", "button-yellow");
-        cancel.setOnAction(e -> showIdleDialog());
+        cancel.setOnAction(e -> {
+            showIdleDialog();
+            onFocus.accept(null);
+        });
         dispatchOptions.getChildren().add(cancel);
     }
 
@@ -355,6 +371,7 @@ public class IncidentPanelScreen implements GameScreen {
     private void resolve(Incident incident, Button source) {
         try {
             int points = controller.resolveIncident(incident.getId());
+            onFocus.accept(null);
             Node card = source.getParent();
             source.setDisable(true);
             TranslateTransition move = new TranslateTransition(Duration.millis(320), card);

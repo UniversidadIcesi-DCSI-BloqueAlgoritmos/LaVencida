@@ -30,6 +30,7 @@ public class CityMapView {
     private double lastTime = -1;
     private double startTime = -1; // momento en que empezo el juego, para que el dia arranque de dia
     private String phaseName = "";
+    private String focusedIncidentId; // incidente elegido en el panel: se resalta en el mapa
 
     // Arma las capas del mapa y arranca la animacion.
     public CityMapView(GameController controller) {
@@ -83,6 +84,11 @@ public class CityMapView {
         return phaseName;
     }
 
+    // Marca el incidente que se eligio en el panel (null para no resaltar ninguno).
+    public void setFocusedIncident(String incidentId) {
+        focusedIncidentId = incidentId;
+    }
+
     // Sacude el mapa cuando el movimiento no se puede hacer.
     public void shake() {
         TranslateTransition shake = new TranslateTransition(Duration.millis(40), mapFrame);
@@ -118,6 +124,9 @@ public class CityMapView {
             // humo, chispas o alarma encima del sprite
             IncidentEffects.draw(gc, incident.getType(), cx, cy, time, cell[0] + cell[1]);
             drawAlertBubble(gc, cx, cy - spriteSize / 2 - 10 + bob, colorOf(incident.getSeverity()));
+            if (incident.getId().equals(focusedIncidentId)) {
+                drawFocus(gc, cx, cy, time);
+            }
         }
 
         for (Vehicle vehicle : controller.getVehicles()) {
@@ -162,6 +171,27 @@ public class CityMapView {
         gc.fillPolygon(new double[]{arrowX - 7, arrowX + 7, arrowX}, new double[]{arrowY - 1, arrowY - 1, arrowY + 8}, 3);
         gc.setFill(RetroTheme.YELLOW);
         gc.fillPolygon(new double[]{arrowX - 5, arrowX + 5, arrowX}, new double[]{arrowY, arrowY, arrowY + 6}, 3);
+    }
+
+    // Esquinas amarillas que parpadean y una flecha que rebota sobre el incidente elegido.
+    private void drawFocus(GraphicsContext gc, double cx, double cy, double time) {
+        double half = CELL * 2.2 + Math.round(Math.sin(time * 6) * 2);
+        double arm = CELL;
+        gc.setLineWidth(3);
+        gc.setStroke((int) (time * 4) % 2 == 0 ? RetroTheme.YELLOW : RetroTheme.CREAM);
+        double[][] corners = {{-1, -1}, {1, -1}, {-1, 1}, {1, 1}};
+        for (double[] corner : corners) {
+            double x = cx + corner[0] * half;
+            double y = cy + corner[1] * half;
+            gc.strokeLine(x, y, x - corner[0] * arm, y);
+            gc.strokeLine(x, y, x, y - corner[1] * arm);
+        }
+        // flecha grande arriba, por encima del globo del "!"
+        double top = cy - half - 22 + Math.round(Math.sin(time * 5) * 3);
+        gc.setFill(RetroTheme.BLACK);
+        gc.fillPolygon(new double[]{cx - 10, cx + 10, cx}, new double[]{top - 1, top - 1, top + 12}, 3);
+        gc.setFill(RetroTheme.YELLOW);
+        gc.fillPolygon(new double[]{cx - 8, cx + 8, cx}, new double[]{top, top, top + 10}, 3);
     }
 
     // Globo con un "!" encima del incidente, del color de su gravedad.

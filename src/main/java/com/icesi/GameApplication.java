@@ -68,6 +68,8 @@ public class GameApplication extends Application {
         screens.put("map", new TrafficMapScreen(controller, mapView));
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         screens.put("incidents", incidentPanel);
+        // el incidente elegido en el panel se resalta en el mapa
+        incidentPanel.setOnFocus(mapView::setFocusedIncident);
         screens.put("split", new SplitViewScreen(controller, mapView, incidentPanel));
 
         BorderPane game = new BorderPane(content);
