@@ -125,6 +125,14 @@
 .button-yellow { -fx-background-color: #ffa300; -fx-text-fill: #000000; }
 .button-yellow:hover { -fx-background-color: #ffec27; }
 
+/* botones de las unidades en el despacho, del color de cada tipo */
+.button-patrol { -fx-background-color: #29adff; }
+.button-patrol:hover { -fx-background-color: #83c8ff; }
+.button-ambulance { -fx-background-color: #fff1e8; -fx-text-fill: #ff004d; }
+.button-ambulance:hover { -fx-background-color: #ffccaa; }
+.button-fire { -fx-background-color: #ff004d; }
+.button-fire:hover { -fx-background-color: #ff77a8; }
+
 /* ---------- caja de dialogo tipo RPG ---------- */
 .dialog-box {
     -fx-background-color: #000000;

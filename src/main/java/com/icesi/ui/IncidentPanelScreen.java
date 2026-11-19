@@ -5,6 +5,7 @@ import com.icesi.model.Incident;
 import com.icesi.model.IncidentStatus;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
+import com.icesi.model.VehicleType;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -176,11 +177,13 @@ public class IncidentPanelScreen implements GameScreen {
         dispatchOptions.getChildren().clear();
 
         String suggestion;
+        Vehicle proposed = null;
         try {
-            Vehicle proposed = controller.proposeVehicle(incident);
+            proposed = controller.proposeVehicle(incident);
             suggestion = "Unidad sugerida: " + proposed.getId() + " (" + Texts.of(proposed.getType()) + ").";
+            Vehicle suggested = proposed;
             Button send = pixelButton("► ENVIAR " + proposed.getId(), "button-green");
-            send.setOnAction(e -> dispatch(proposed));
+            send.setOnAction(e -> dispatch(suggested));
             dispatchOptions.getChildren().add(send);
         } catch (RuntimeException e) {
             suggestion = "¡No hay unidades compatibles libres!";
@@ -189,10 +192,10 @@ public class IncidentPanelScreen implements GameScreen {
         dispatchText.setText("► " + incident.getId() + " · " + Texts.of(incident.getType())
                 + " en " + incident.getLocation() + ".\n" + suggestion + "\nO elige otra unidad libre:");
 
-        // las demas unidades libres; si no es compatible el modelo lo rechaza con su excepcion
+        // las demas unidades libres (sin repetir la sugerida); si no es compatible el modelo lo rechaza con su excepcion
         for (Vehicle vehicle : controller.getVehicles()) {
-            if (vehicle.getStatus() == VehicleStatus.AVAILABLE) {
-                Button option = pixelButton(vehicle.getId(), null);
+            if (vehicle.getStatus() == VehicleStatus.AVAILABLE && vehicle != proposed) {
+                Button option = pixelButton(vehicle.getId(), buttonClassOf(vehicle.getType()));
                 option.setGraphic(SpriteRegistry.createIcon(SpriteRegistry.forVehicle(vehicle.getType()), 20));
                 option.setOnAction(e -> dispatch(vehicle));
                 dispatchOptions.getChildren().add(option);
@@ -201,6 +204,17 @@ public class IncidentPanelScreen implements GameScreen {
         Button cancel = pixelButton("✕ CANCELAR", "button-yellow");
         cancel.setOnAction(e -> showIdleDialog());
         dispatchOptions.getChildren().add(cancel);
+    }
+
+    // Cada tipo de unidad tiene su color: patrullas azul, ambulancias blanco con rojo y bomberos rojo.
+    private String buttonClassOf(VehicleType type) {
+        if (type == VehicleType.AMBULANCE) {
+            return "button-ambulance";
+        }
+        if (type == VehicleType.FIRE_TRUCK) {
+            return "button-fire";
+        }
+        return "button-patrol";
     }
 
     // Envia el vehiculo al incidente seleccionado.
