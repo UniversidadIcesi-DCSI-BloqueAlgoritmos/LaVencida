@@ -6,7 +6,10 @@ import com.icesi.model.IncidentStatus;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
 import com.icesi.model.VehicleType;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
@@ -26,6 +29,8 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.icesi.ui.MonitoringCenterScreen.pixelButton;
 import static com.icesi.ui.MonitoringCenterScreen.severityBadge;
@@ -48,6 +53,10 @@ public class IncidentPanelScreen implements GameScreen {
     // incidente que se esta despachando en la caja de dialogo (null si no hay ninguno)
     private Incident selected;
     private String lastSignature = "";
+    // incidentes que ya tienen tarjeta en pantalla: los nuevos entran con animacion
+    private Set<String> shownIds = new HashSet<>();
+    private boolean pulseOn;
+    private boolean cardLeaving; // mientras una tarjeta sale volando no se redibuja la lista
 
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
     public IncidentPanelScreen(GameController controller, EventLog eventLog) {
@@ -84,6 +93,11 @@ public class IncidentPanelScreen implements GameScreen {
         effects = new Pane();
         effects.setMouseTransparent(true);
         root = new StackPane(layout, effects);
+
+        // las tarjetas de gravedad ALTA titilan en rojo para que se vean urgentes
+        Timeline pulse = new Timeline(new KeyFrame(Duration.millis(450), e -> pulseHighCards()));
+        pulse.setCycleCount(Animation.INDEFINITE);
+        pulse.play();
         refresh();
     }
 
@@ -96,17 +110,26 @@ public class IncidentPanelScreen implements GameScreen {
     public void refresh() {
         // solo se reconstruyen las tarjetas si algo cambio, para no perder clics ni el scroll
         String signature = buildSignature();
-        if (signature.equals(lastSignature)) {
+        if (cardLeaving || signature.equals(lastSignature)) {
             return;
         }
         lastSignature = signature;
         cardList.getChildren().clear();
 
         boolean first = true;
+        int newCards = 0;
+        Set<String> currentIds = new HashSet<>();
         for (Incident incident : controller.getActiveIncidentsByPriority()) {
-            cardList.getChildren().add(createCard(incident, first));
+            HBox card = createCard(incident, first);
+            cardList.getChildren().add(card);
+            currentIds.add(incident.getId());
+            if (!shownIds.contains(incident.getId())) {
+                slideIn(card, newCards * 80);
+                newCards++;
+            }
             first = false;
         }
+        shownIds = currentIds;
         if (cardList.getChildren().isEmpty()) {
             Label empty = styled(new Label("No hay incidentes activos.\nVe al Centro de Monitoreo y presiona [G] para simular uno."), "dialog-text");
             VBox box = new VBox(empty);
@@ -167,6 +190,9 @@ public class IncidentPanelScreen implements GameScreen {
         card.getStyleClass().add("incident-card");
         if (isTop) {
             card.getStyleClass().add("incident-card-top");
+        }
+        if (incident.getSeverity() == com.icesi.model.Severity.HIGH) {
+            card.getStyleClass().add("incident-card-high");
         }
         return card;
     }
@@ -234,14 +260,54 @@ public class IncidentPanelScreen implements GameScreen {
         }
     }
 
+    // La tarjeta nueva entra deslizandose desde la izquierda; delay hace que entren una tras otra.
+    private void slideIn(Node card, double delay) {
+        card.setOpacity(0);
+        TranslateTransition move = new TranslateTransition(Duration.millis(260), card);
+        move.setFromX(-60);
+        move.setToX(0);
+        FadeTransition fade = new FadeTransition(Duration.millis(260), card);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        ParallelTransition enter = new ParallelTransition(move, fade);
+        enter.setDelay(Duration.millis(delay));
+        enter.play();
+    }
+
+    // Prende y apaga el borde rojo de las tarjetas de gravedad ALTA.
+    private void pulseHighCards() {
+        pulseOn = !pulseOn;
+        for (Node node : cardList.getChildren()) {
+            if (node.getStyleClass().contains("incident-card-high")) {
+                node.getStyleClass().remove("incident-card-pulse");
+                if (pulseOn) {
+                    node.getStyleClass().add("incident-card-pulse");
+                }
+            }
+        }
+    }
+
     // Finaliza la atencion y muestra los puntos ganados flotando sobre el boton.
+    // La tarjeta sale volando a la derecha antes de desaparecer de la lista.
     private void resolve(Incident incident, Button source) {
         try {
             int points = controller.resolveIncident(incident.getId());
+            Node card = source.getParent();
+            source.setDisable(true);
+            TranslateTransition move = new TranslateTransition(Duration.millis(320), card);
+            move.setToX(500);
+            FadeTransition fade = new FadeTransition(Duration.millis(320), card);
+            fade.setToValue(0);
+            ParallelTransition exit = new ParallelTransition(move, fade);
+            cardLeaving = true;
+            exit.setOnFinished(e -> {
+                cardLeaving = false;
+                refresh();
+            });
+            exit.play();
             dispatchText.setText("¡" + incident.getId() + " resuelto! Ganaste " + points + " puntos.");
             eventLog.add(incident.getId() + " resuelto  +" + points + " PTS", EventLog.RESOLVED);
             floatPoints(points, source);
-            refresh();
         } catch (RuntimeException e) {
             showError(e.getMessage());
         }

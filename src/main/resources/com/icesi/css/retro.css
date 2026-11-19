@@ -172,6 +172,11 @@
     -fx-background-color: #1d1d10;
 }
 
+/* las tarjetas de gravedad alta alternan este borde rojo */
+.incident-card-pulse {
+    -fx-border-color: #ff004d;
+}
+
 .incident-id {
     -fx-font-size: 16px;
     -fx-text-fill: #fff1e8;
