@@ -70,6 +70,8 @@ public class GameApplication extends Application {
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
         incidentPanel.setOnFocus(mapView::setFocusedIncident);
+        // solo se puede resolver cuando la unidad ya llego en el mapa
+        incidentPanel.setArrivalCheck(mapView::hasArrived);
         screens.put("split", new SplitViewScreen(controller, mapView, incidentPanel));
 
         BorderPane game = new BorderPane(content);

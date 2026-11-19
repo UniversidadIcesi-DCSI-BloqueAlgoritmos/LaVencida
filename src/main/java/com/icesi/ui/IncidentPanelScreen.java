@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static com.icesi.ui.MonitoringCenterScreen.pixelButton;
 import static com.icesi.ui.MonitoringCenterScreen.severityBadge;
@@ -70,6 +71,10 @@ public class IncidentPanelScreen implements GameScreen {
 
     // avisa a quien le interese (el mapa) cual incidente se eligio; null si ninguno
     private Consumer<String> onFocus = id -> { };
+    // pregunta al mapa si la unidad ya llego; solo entonces se puede resolver
+    private Predicate<Vehicle> hasArrived = vehicle -> true;
+    // incidentes cuya unidad ya llego, para avisar una sola vez
+    private Set<String> arrivedIds = new HashSet<>();
 
     // Arma la pantalla: la lista de incidentes a la izquierda y el despacho a la derecha.
     public IncidentPanelScreen(GameController controller, EventLog eventLog) {
@@ -117,6 +122,11 @@ public class IncidentPanelScreen implements GameScreen {
     // El mapa usa esto para resaltar el incidente elegido.
     public void setOnFocus(Consumer<String> onFocus) {
         this.onFocus = onFocus;
+    }
+
+    // El mapa dice cuando una unidad ya llego al incidente.
+    public void setArrivalCheck(Predicate<Vehicle> hasArrived) {
+        this.hasArrived = hasArrived;
     }
 
     @Override
@@ -167,6 +177,7 @@ public class IncidentPanelScreen implements GameScreen {
     @Override
     public void refresh() {
         // solo se reconstruyen las tarjetas si algo cambio, para no perder clics ni el scroll
+        checkArrivals();
         String signature = buildSignature();
         if (cardLeaving || signature.equals(lastSignature)) {
             return;
@@ -249,6 +260,10 @@ public class IncidentPanelScreen implements GameScreen {
         if (incident.getStatus() == IncidentStatus.PENDING) {
             action = pixelButton("ASIGNAR", "button-blue");
             action.setOnAction(e -> openDispatch(incident));
+        } else if (!arrived(incident)) {
+            // la unidad todavia va por las calles: no se puede resolver aun
+            action = pixelButton("EN CAMINO...", "button-gray");
+            action.setDisable(true);
         } else {
             action = pixelButton("RESOLVER", "button-green");
             action.setOnAction(e -> resolve(incident, action));
@@ -427,11 +442,31 @@ public class IncidentPanelScreen implements GameScreen {
         animation.play();
     }
 
+    private boolean arrived(Incident incident) {
+        Vehicle vehicle = incident.getAssignedVehicle();
+        return vehicle == null || hasArrived.test(vehicle);
+    }
+
+    // Avisa con un sonido y en el registro cuando una unidad llega a su incidente.
+    private void checkArrivals() {
+        Set<String> nowArrived = new HashSet<>();
+        for (Incident incident : controller.getActiveIncidentsByPriority()) {
+            if (incident.getStatus() != IncidentStatus.PENDING && arrived(incident)) {
+                nowArrived.add(incident.getId());
+                if (!arrivedIds.contains(incident.getId())) {
+                    eventLog.add(incident.getAssignedVehicle().getId() + " llego a " + incident.getId(), EventLog.DISPATCH);
+                    RetroSound.play(RetroSound.Effect.MENU);
+                }
+            }
+        }
+        arrivedIds = nowArrived;
+    }
+
     // Texto que resume el estado actual; si no cambia no hace falta redibujar.
     private String buildSignature() {
         StringBuilder text = new StringBuilder();
         for (Incident incident : controller.getActiveIncidentsByPriority()) {
-            text.append(incident.getId()).append(incident.getStatus()).append(';');
+            text.append(incident.getId()).append(incident.getStatus()).append(arrived(incident)).append(';');
         }
         for (Vehicle vehicle : controller.getVehicles()) {
             text.append(vehicle.getStatus().ordinal());

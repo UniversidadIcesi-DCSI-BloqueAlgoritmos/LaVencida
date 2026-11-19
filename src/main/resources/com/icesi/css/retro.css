@@ -123,6 +123,9 @@
 .button-green:hover { -fx-background-color: #00e436; -fx-text-fill: #000000; }
 .button-yellow { -fx-background-color: #ffa300; -fx-text-fill: #000000; }
 .button-yellow:hover { -fx-background-color: #ffec27; }
+/* boton gris mientras la unidad va en camino: se ve apagado pero se lee bien */
+.button-gray { -fx-background-color: #5f574f; -fx-text-fill: #c2c3c7; }
+.button-gray:disabled { -fx-opacity: 1; }
 
 /* botones de las unidades en el despacho, del color de cada tipo */
 .button-patrol { -fx-background-color: #29adff; }
