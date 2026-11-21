@@ -16,6 +16,10 @@ public class IncidentSpawner implements Runnable {
     private GameController controller;
     private Consumer<Incident> onSpawn;
     private long fixedInterval; // si es mayor que 0 se usa siempre este intervalo (sirve para las pruebas)
+    // volatile: estas banderas las leen dos hilos (el del juego y el del generador)
+    private volatile boolean paused;
+    private volatile boolean running;
+    private Thread thread;
 
     // Crea el generador; onSpawn recibe cada incidente nuevo.
     public IncidentSpawner(GameController controller, Consumer<Incident> onSpawn) {
@@ -31,34 +35,73 @@ public class IncidentSpawner implements Runnable {
 
     // Calcula cuanto se espera entre incidentes con ese puntaje.
     public static long intervalForScore(int score) {
-        return 0;
+        long levels = Math.max(0, score) / POINTS_PER_LEVEL;
+        long interval = BASE_INTERVAL_MILLIS - levels * STEP_MILLIS;
+        return Math.max(MIN_INTERVAL_MILLIS, interval);
     }
 
     // Genera un incidente ahora (si no esta en pausa) y avisa.
     public Incident spawnOnce() {
-        return null;
+        if (paused) {
+            return null;
+        }
+        Incident incident = controller.spawnRandomIncident();
+        onSpawn.accept(incident);
+        return incident;
     }
 
     public void setPaused(boolean paused) {
+        this.paused = paused;
     }
 
     public boolean isPaused() {
-        return false;
+        return paused;
     }
 
-    // Arranca el hilo del generador.
-    public void start() {
+    // Arranca el hilo del generador (si ya estaba corriendo no hace nada).
+    public synchronized void start() {
+        if (running) {
+            return;
+        }
+        running = true;
+        thread = new Thread(this, "generador-incidentes");
+        thread.setDaemon(true); // asi no deja el programa abierto al cerrar la ventana
+        thread.start();
     }
 
-    // Detiene el hilo del generador.
-    public void stop() {
+    // Detiene el hilo del generador y espera a que termine.
+    public synchronized void stop() {
+        running = false;
+        if (thread != null) {
+            thread.interrupt();
+            try {
+                thread.join(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            thread = null;
+        }
     }
 
     public boolean isRunning() {
-        return false;
+        return running;
     }
 
+    // Lo que hace el hilo: esperar, generar un incidente y repetir hasta que lo detengan.
     @Override
     public void run() {
+        while (running) {
+            long wait = fixedInterval > 0 ? fixedInterval : intervalForScore(controller.getScore());
+            try {
+                Thread.sleep(wait);
+            } catch (InterruptedException e) {
+                // nos despertaron para detenernos
+                break;
+            }
+            if (running) {
+                spawnOnce();
+            }
+        }
+        running = false;
     }
 }
