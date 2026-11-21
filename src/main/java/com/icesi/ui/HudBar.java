@@ -39,9 +39,11 @@ public class HudBar extends HBox {
         centerKey = new Label("[C] CENTRO");
         mapKey = new Label("[M] MAPA");
         incidentsKey = new Label("[I] INCIDENTES");
+        Label helpKey = new Label("[H] AYUDA");
+        helpKey.getStyleClass().add("hud-key");
 
         getChildren().addAll(PixelFont.createLabel("SGMMS", 3, RetroTheme.YELLOW, RetroTheme.PURPLE),
-                scoreLabel, activeLabel, freeLabel, timerLabel, alertMeter, spacer, soundLabel, centerKey, mapKey, incidentsKey);
+                scoreLabel, activeLabel, freeLabel, timerLabel, alertMeter, spacer, soundLabel, centerKey, mapKey, incidentsKey, helpKey);
         setActiveScreen("center");
 
         // ningun texto del HUD se puede encoger: si falta espacio se achica el hueco del medio

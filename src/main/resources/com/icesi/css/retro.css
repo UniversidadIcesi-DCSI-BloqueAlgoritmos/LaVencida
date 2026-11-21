@@ -21,7 +21,7 @@
     -fx-border-width: 0 0 4 0, 0 0 2 0;
     -fx-border-insets: 0, 0 0 4 0;
     -fx-padding: 10 18 14 18;
-    -fx-spacing: 18;
+    -fx-spacing: 12;
 }
 
 .hud-item {
@@ -295,3 +295,6 @@
 }
 .shift-end-record { -fx-font-size: 16px; -fx-text-fill: #c2c3c7; }
 .shift-end-record-new { -fx-font-size: 20px; -fx-text-fill: #00e436; -fx-effect: dropshadow(one-pass-box, #008751, 0, 0, 2, 2); }
+
+/* ventana de ayuda */
+.help-text { -fx-font-size: 14px; -fx-text-fill: #fff1e8; }

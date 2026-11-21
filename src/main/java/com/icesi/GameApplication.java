@@ -16,6 +16,7 @@ import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
+import com.icesi.ui.HelpView;
 import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
@@ -61,6 +62,7 @@ public class GameApplication extends Application {
     private ShiftTimer shiftTimer;
     private ShiftEndView shiftEndView;
     private PauseView pauseView = new PauseView();
+    private HelpView helpView = new HelpView();
     private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
@@ -99,7 +101,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
+        root = new StackPane(game, pauseView, helpView, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -218,6 +220,13 @@ public class GameApplication extends Application {
         shiftEndView.addLine(recordLine);
     }
 
+    // Pausa o reanuda los dos hilos (incidentes y reloj).
+    private void setPaused(boolean value) {
+        paused = value;
+        spawner.setPaused(value);
+        shiftTimer.setPaused(value);
+    }
+
     // F5: guarda la partida en la carpeta data/partida.
     private void saveGame() {
         try {
@@ -292,6 +301,21 @@ public class GameApplication extends Application {
             }
             return;
         }
+        if (helpView.isVisible()) {
+            // con la ayuda abierta solo sirven H y ESC para cerrarla
+            if (code == KeyCode.H || code == KeyCode.ESCAPE) {
+                helpView.setVisible(false);
+                setPaused(false);
+            }
+            return;
+        }
+        if (code == KeyCode.H && !paused) {
+            // la ayuda pausa el juego mientras se lee
+            setPaused(true);
+            helpView.setVisible(true);
+            RetroSound.play(RetroSound.Effect.MENU);
+            return;
+        }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9) {
             return;
         }
@@ -318,9 +342,7 @@ public class GameApplication extends Application {
             return;
         }
         if (code == KeyCode.P) {
-            paused = !paused;
-            spawner.setPaused(paused);
-            shiftTimer.setPaused(paused);
+            setPaused(!paused);
             pauseView.setPaused(paused);
             toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
             eventLog.add(paused ? "Simulacion en pausa." : "Simulacion reanudada.", EventLog.SYSTEM);
