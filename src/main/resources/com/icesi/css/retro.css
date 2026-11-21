@@ -293,3 +293,5 @@
     -fx-text-fill: #ffec27;
     -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 3, 3);
 }
+.shift-end-record { -fx-font-size: 16px; -fx-text-fill: #c2c3c7; }
+.shift-end-record-new { -fx-font-size: 20px; -fx-text-fill: #00e436; -fx-effect: dropshadow(one-pass-box, #008751, 0, 0, 2, 2); }

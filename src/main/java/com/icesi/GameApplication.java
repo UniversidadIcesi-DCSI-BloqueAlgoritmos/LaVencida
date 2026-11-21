@@ -3,6 +3,7 @@ package com.icesi;
 import com.icesi.controller.GameController;
 import com.icesi.controller.IncidentSpawner;
 import com.icesi.controller.ShiftTimer;
+import com.icesi.persistence.HighScoreStore;
 import com.icesi.ui.CityMapView;
 import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
@@ -28,6 +29,7 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
@@ -57,6 +59,7 @@ public class GameApplication extends Application {
     // reloj del turno: 5 minutos, tambien en su propio hilo
     private ShiftTimer shiftTimer;
     private ShiftEndView shiftEndView;
+    private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
     private Stage stage;
     private CityMapView mapView;
@@ -89,6 +92,7 @@ public class GameApplication extends Application {
         game.setTop(hud);
 
         titleScreen = new TitleScreen();
+        titleScreen.setRecord(highScores.load());
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
@@ -193,6 +197,22 @@ public class GameApplication extends Application {
         RetroSound.play(result == ShiftTimer.Result.OVERLOADED ? RetroSound.Effect.ERROR : RetroSound.Effect.RESOLVE);
         eventLog.add(result == ShiftTimer.Result.OVERLOADED ? "¡Ciudad saturada! Fin del turno." : "Fin del turno.", EventLog.SYSTEM);
         shiftEndView.show(result, controller.getScore());
+        // record: si se supero se celebra, si no se muestra cual es
+        int previous = highScores.load();
+        Label recordLine = new Label();
+        try {
+            if (highScores.saveIfHigher(controller.getScore())) {
+                recordLine.setText("★ ¡NUEVO RECORD! ★");
+                recordLine.getStyleClass().add("shift-end-record-new");
+            } else {
+                recordLine.setText(String.format("RECORD  %06d", previous));
+                recordLine.getStyleClass().add("shift-end-record");
+            }
+        } catch (RuntimeException e) {
+            recordLine.setText("No se pudo guardar el record.");
+            recordLine.getStyleClass().add("shift-end-record");
+        }
+        shiftEndView.addLine(recordLine);
     }
 
     // Empieza una partida nueva desde la pantalla de titulo, en la misma ventana.

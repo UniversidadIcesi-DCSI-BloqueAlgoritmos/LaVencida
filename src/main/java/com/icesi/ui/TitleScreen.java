@@ -26,6 +26,7 @@ public class TitleScreen {
 
     private int selected;          // opcion del menu que esta marcada
     private double[] menuTop = new double[MENU.length]; // donde quedo dibujada cada opcion (para el clic)
+    private int record;            // mejor puntaje guardado, se muestra abajo
     private WritableImage skyImage; // el cielo se dibuja una sola vez y se reutiliza en cada cuadro
 
     // Crea la pantalla y prepara las estrellas y los edificios (siempre los mismos gracias a la semilla).
@@ -61,6 +62,11 @@ public class TitleScreen {
     }
 
     // Empieza la animacion.
+    // El mejor puntaje que se muestra en la portada.
+    public void setRecord(int record) {
+        this.record = record;
+    }
+
     public void start() {
         timer.start();
     }
@@ -136,6 +142,9 @@ public class TitleScreen {
 
         drawMenu(gc, width, height, time);
         drawCentered(gc, "LA VENCIDA - APO II - 2026", height - 40, 2, RetroTheme.LAVENDER, width);
+        if (record > 0) {
+            drawCentered(gc, String.format("RECORD %06d", record), height - 70, 3, RetroTheme.YELLOW, width);
+        }
     }
 
     // Crea la imagen del cielo: un degradado de noche con "dithering" (mezcla de pixeles en cuadricula)
