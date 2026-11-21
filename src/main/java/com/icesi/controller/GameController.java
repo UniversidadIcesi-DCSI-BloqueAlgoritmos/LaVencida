@@ -3,14 +3,19 @@ package com.icesi.controller;
 import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
+import com.icesi.model.IncidentStatus;
 import com.icesi.model.IncidentGenerator;
 import com.icesi.model.IncidentManager;
 import com.icesi.model.Operator;
+import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
 import com.icesi.structures.LinkedList;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 // Controlador de la interfaz grafica (MVC): recibe las acciones del jugador y las traduce en operaciones del modelo.
@@ -25,6 +30,15 @@ public class GameController {
     private IncidentGenerator generator;
     private MapPositionResolver resolver;
     private Random random;
+
+    // reglas de puntaje extra
+    public static final int FAST_BONUS_POINTS = 50;
+    public static final int FAST_LIMIT_SECONDS = 30;
+    public static final int WAIT_PENALTY_POINTS = 25;
+    public static final int WAIT_PERIOD_SECONDS = 30;
+    private boolean lastResolveFast;
+    // cuantos bloques de 30 s ya se le cobraron a cada incidente
+    private Map<String, Integer> chargedBlocks = new HashMap<>();
 
     // Crea el juego con el mapa de Palmira, el operador en una via principal y los vehiculos iniciales.
     public GameController() {
@@ -123,17 +137,40 @@ public class GameController {
 
     // Finaliza la atencion en el momento indicado; suma el bonus si fue rapido.
     public synchronized int resolveIncident(String incidentId, LocalDateTime now) {
-        return 0;
+        Incident incident = manager.findIncidentById(incidentId);
+        int points = manager.finishAttention(incident, operator, now);
+        long seconds = Duration.between(incident.getGeneratedAt(), now).getSeconds();
+        lastResolveFast = seconds >= 0 && seconds < FAST_LIMIT_SECONDS;
+        if (lastResolveFast) {
+            operator.addScore(FAST_BONUS_POINTS);
+            points += FAST_BONUS_POINTS;
+        }
+        return points;
     }
 
     // Indica si la ultima resolucion gano el bonus de rapidez.
     public synchronized boolean wasLastResolveFast() {
-        return false;
+        return lastResolveFast;
     }
 
     // Cobra la penalizacion a los incidentes ALTOS que siguen esperando unidad; retorna los puntos quitados.
     public synchronized int applyWaitPenalties(LocalDateTime now) {
-        return 0;
+        int penalty = 0;
+        for (Incident incident : manager.getActiveIncidentsByPriority()) {
+            if (incident.getSeverity() != Severity.HIGH || incident.getStatus() != IncidentStatus.PENDING) {
+                continue;
+            }
+            long blocks = Duration.between(incident.getGeneratedAt(), now).getSeconds() / WAIT_PERIOD_SECONDS;
+            int charged = chargedBlocks.getOrDefault(incident.getId(), 0);
+            if (blocks > charged) {
+                penalty += (int) (blocks - charged) * WAIT_PENALTY_POINTS;
+                chargedBlocks.put(incident.getId(), (int) blocks);
+            }
+        }
+        // el puntaje nunca queda negativo
+        penalty = Math.min(penalty, operator.getScore());
+        operator.addScore(-penalty);
+        return penalty;
     }
 
     // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).
