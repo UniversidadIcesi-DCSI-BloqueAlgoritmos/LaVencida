@@ -11,12 +11,14 @@ public class OptionsView extends StackPane {
 
     public static final String SOUND = "SONIDO";
     public static final String CRT = "EFECTO CRT";
+    public static final String SPEED = "VELOCIDAD";
     public static final String BACK = "VOLVER";
 
-    private String[] items = {SOUND, CRT, BACK};
+    private String[] items = {SOUND, CRT, SPEED, BACK};
     private Label[] lines;
     private int selected;
     private boolean crtOn = true;
+    private boolean fastMode;
 
     public OptionsView() {
         getStyleClass().add("shift-end-background");
@@ -66,6 +68,15 @@ public class OptionsView extends StackPane {
         refresh();
     }
 
+    public boolean isFastMode() {
+        return fastMode;
+    }
+
+    public void setFastMode(boolean fastMode) {
+        this.fastMode = fastMode;
+        refresh();
+    }
+
     // Vuelve a escribir cada linea con su valor actual; la marcada va resaltada.
     public void refresh() {
         for (int i = 0; i < items.length; i++) {
@@ -74,6 +85,8 @@ public class OptionsView extends StackPane {
                 text += ":  " + (RetroSound.isMuted() ? "OFF" : "ON");
             } else if (items[i].equals(CRT)) {
                 text += ":  " + (crtOn ? "ON" : "OFF");
+            } else if (items[i].equals(SPEED)) {
+                text += ":  " + (fastMode ? "RAPIDA" : "NORMAL");
             }
             lines[i].setText(i == selected ? "> " + text + " <" : text);
             lines[i].getStyleClass().setAll("label", i == selected ? "options-selected" : "options-item");

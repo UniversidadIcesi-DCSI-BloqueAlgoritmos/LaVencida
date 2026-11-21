@@ -163,6 +163,7 @@ public class GameApplication extends Application {
             titleScreen.getView().setVisible(false);
             toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
             eventLog.add("Turno iniciado. Unidades listas.", EventLog.SYSTEM);
+            spawner.setFastMode(optionsView.isFastMode());
             spawner.start();
             shiftTimer.start();
         });
@@ -253,6 +254,10 @@ public class GameApplication extends Application {
                 // las lineas del monitor viejo se pueden quitar
                 optionsView.setCrtOn(!optionsView.isCrtOn());
                 crtOverlay.setVisible(optionsView.isCrtOn());
+                RetroSound.play(RetroSound.Effect.MENU);
+            } else if (option.equals(OptionsView.SPEED)) {
+                // en RAPIDA los incidentes llegan mas seguido
+                optionsView.setFastMode(!optionsView.isFastMode());
                 RetroSound.play(RetroSound.Effect.MENU);
             } else {
                 optionsView.close();

@@ -100,4 +100,24 @@ class IncidentSpawnerTest {
         assertTrue(controller.getActiveIncidentCount() >= 2);
         assertFalse(spawner.isRunning());
     }
+
+    // Caso 7: En velocidad RAPIDA se espera 40% menos.
+    @Test
+    void fastModeWaitsFortyPercentLess() {
+        // Act
+        long interval = IncidentSpawner.intervalFor(0, true);
+
+        // Assert
+        assertEquals(7200, interval);
+    }
+
+    // Caso 8: En velocidad RAPIDA el intervalo nunca baja de 3 segundos.
+    @Test
+    void fastModeNeverGoesBelowThreeSeconds() {
+        // Act
+        long interval = IncidentSpawner.intervalFor(100000, true);
+
+        // Assert
+        assertEquals(3000, interval);
+    }
 }

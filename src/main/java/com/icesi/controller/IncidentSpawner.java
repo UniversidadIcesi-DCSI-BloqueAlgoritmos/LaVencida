@@ -12,6 +12,8 @@ public class IncidentSpawner implements Runnable {
     public static final long MIN_INTERVAL_MILLIS = 5000;
     public static final int POINTS_PER_LEVEL = 300;
     public static final long STEP_MILLIS = 1000;
+    public static final double FAST_FACTOR = 0.6;
+    public static final long FAST_MIN_INTERVAL_MILLIS = 3000;
 
     private GameController controller;
     private Consumer<Incident> onSpawn;
@@ -19,6 +21,7 @@ public class IncidentSpawner implements Runnable {
     // volatile: estas banderas las leen dos hilos (el del juego y el del generador)
     private volatile boolean paused;
     private volatile boolean running;
+    private volatile boolean fastMode;
     private Thread thread;
 
     // Crea el generador; onSpawn recibe cada incidente nuevo.
@@ -38,6 +41,19 @@ public class IncidentSpawner implements Runnable {
         long levels = Math.max(0, score) / POINTS_PER_LEVEL;
         long interval = BASE_INTERVAL_MILLIS - levels * STEP_MILLIS;
         return Math.max(MIN_INTERVAL_MILLIS, interval);
+    }
+
+    // Intervalo con la velocidad RAPIDA: 40% menos de espera, pero nunca menos de 3 segundos.
+    public static long intervalFor(int score, boolean fast) {
+        long interval = intervalForScore(score);
+        if (!fast) {
+            return interval;
+        }
+        return Math.max(FAST_MIN_INTERVAL_MILLIS, Math.round(interval * FAST_FACTOR));
+    }
+
+    public void setFastMode(boolean fastMode) {
+        this.fastMode = fastMode;
     }
 
     // Genera un incidente ahora (si no esta en pausa) y avisa.
@@ -91,7 +107,7 @@ public class IncidentSpawner implements Runnable {
     @Override
     public void run() {
         while (running) {
-            long wait = fixedInterval > 0 ? fixedInterval : intervalForScore(controller.getScore());
+            long wait = fixedInterval > 0 ? fixedInterval : intervalFor(controller.getScore(), fastMode);
             try {
                 Thread.sleep(wait);
             } catch (InterruptedException e) {
