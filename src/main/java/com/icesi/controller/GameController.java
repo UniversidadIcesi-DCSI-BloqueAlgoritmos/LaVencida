@@ -3,16 +3,26 @@ package com.icesi.controller;
 import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
+import com.icesi.model.IncidentStatus;
 import com.icesi.model.IncidentGenerator;
 import com.icesi.model.IncidentManager;
 import com.icesi.model.Operator;
+import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
+import com.icesi.persistence.JsonPersistence;
 import com.icesi.structures.LinkedList;
 
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 // Controlador de la interfaz grafica (MVC): recibe las acciones del jugador y las traduce en operaciones del modelo.
+// Los metodos que tocan los incidentes son synchronized porque el generador de incidentes corre en otro hilo:
+// asi nunca se lee la lista mientras el otro hilo la esta cambiando.
 public class GameController {
 
     private CityMap cityMap;
@@ -22,6 +32,15 @@ public class GameController {
     private IncidentGenerator generator;
     private MapPositionResolver resolver;
     private Random random;
+
+    // reglas de puntaje extra
+    public static final int FAST_BONUS_POINTS = 50;
+    public static final int FAST_LIMIT_SECONDS = 30;
+    public static final int WAIT_PENALTY_POINTS = 25;
+    public static final int WAIT_PERIOD_SECONDS = 30;
+    private boolean lastResolveFast;
+    // cuantos bloques de 30 s ya se le cobraron a cada incidente
+    private Map<String, Integer> chargedBlocks = new HashMap<>();
 
     // Crea el juego con el mapa de Palmira, el operador en una via principal y los vehiculos iniciales.
     public GameController() {
@@ -52,7 +71,7 @@ public class GameController {
     }
 
     // Mueve al operador si la celda destino es transitable; retorna true si se movio.
-    public boolean moveOperator(Direction direction) {
+    public synchronized boolean moveOperator(Direction direction) {
         if (direction == null) {
             return false;
         }
@@ -79,7 +98,7 @@ public class GameController {
     }
 
     // Deshace el ultimo movimiento del operador; retorna false si no habia movimientos.
-    public boolean undoOperatorMove() {
+    public synchronized boolean undoOperatorMove() {
         // si la pila esta vacia no hay nada que deshacer, pero el juego sigue
         if (operator.getMovementCount() == 0) {
             return false;
@@ -89,7 +108,7 @@ public class GameController {
     }
 
     // Genera un robo o un incendio aleatorio y lo registra como activo.
-    public Incident spawnRandomIncident() {
+    public synchronized Incident spawnRandomIncident() {
         Incident incident;
         if (random.nextBoolean()) {
             incident = generator.generateRandomTheft();
@@ -101,25 +120,95 @@ public class GameController {
     }
 
     // Propone el vehiculo disponible mas adecuado para el incidente.
-    public Vehicle proposeVehicle(Incident incident) {
+    public synchronized Vehicle proposeVehicle(Incident incident) {
         return manager.proposeCandidateVehicle(incident, vehicles);
     }
 
     // Asigna el vehiculo al incidente usando sus IDs.
-    public void assignVehicle(String vehicleId, String incidentId) {
+    public synchronized void assignVehicle(String vehicleId, String incidentId) {
         Vehicle vehicle = findVehicleById(vehicleId);
         Incident incident = manager.findIncidentById(incidentId);
         manager.assignVehicle(vehicle, incident);
     }
 
     // Finaliza la atencion del incidente y retorna los puntos ganados.
-    public int resolveIncident(String incidentId) {
+    public synchronized int resolveIncident(String incidentId) {
         Incident incident = manager.findIncidentById(incidentId);
         return manager.finishAttention(incident, operator);
     }
 
+    // Finaliza la atencion en el momento indicado; suma el bonus si fue rapido.
+    public synchronized int resolveIncident(String incidentId, LocalDateTime now) {
+        Incident incident = manager.findIncidentById(incidentId);
+        int points = manager.finishAttention(incident, operator, now);
+        long seconds = Duration.between(incident.getGeneratedAt(), now).getSeconds();
+        lastResolveFast = seconds >= 0 && seconds < FAST_LIMIT_SECONDS;
+        if (lastResolveFast) {
+            operator.addScore(FAST_BONUS_POINTS);
+            points += FAST_BONUS_POINTS;
+        }
+        return points;
+    }
+
+    // Indica si la ultima resolucion gano el bonus de rapidez.
+    public synchronized boolean wasLastResolveFast() {
+        return lastResolveFast;
+    }
+
+    // Cobra la penalizacion a los incidentes ALTOS que siguen esperando unidad; retorna los puntos quitados.
+    public synchronized int applyWaitPenalties(LocalDateTime now) {
+        int penalty = 0;
+        for (Incident incident : manager.getActiveIncidentsByPriority()) {
+            if (incident.getSeverity() != Severity.HIGH || incident.getStatus() != IncidentStatus.PENDING) {
+                continue;
+            }
+            long blocks = Duration.between(incident.getGeneratedAt(), now).getSeconds() / WAIT_PERIOD_SECONDS;
+            int charged = chargedBlocks.getOrDefault(incident.getId(), 0);
+            if (blocks > charged) {
+                penalty += (int) (blocks - charged) * WAIT_PENALTY_POINTS;
+                chargedBlocks.put(incident.getId(), (int) blocks);
+            }
+        }
+        // el puntaje nunca queda negativo
+        penalty = Math.min(penalty, operator.getScore());
+        operator.addScore(-penalty);
+        return penalty;
+    }
+
+    // Guarda la partida (operador, vehiculos e incidentes activos) en archivos JSON dentro de la carpeta.
+    public synchronized void saveGame(String folder) {
+        JsonPersistence json = new JsonPersistence();
+        json.saveOperator(operator, Path.of(folder, "operator.json").toString());
+        json.saveVehicles(vehicles, Path.of(folder, "vehicles.json").toString());
+        json.saveIncidents(manager.getActiveIncidentsByPriority(), Path.of(folder, "incidents.json").toString());
+    }
+
+    // Carga la partida guardada en la carpeta y reemplaza la actual.
+    public synchronized void loadGame(String folder) {
+        JsonPersistence json = new JsonPersistence();
+        // primero se lee todo; si algo falla la partida actual queda igual
+        LinkedList<Vehicle> loadedVehicles = json.loadVehicles(Path.of(folder, "vehicles.json").toString());
+        LinkedList<Incident> loadedIncidents = json.loadIncidents(Path.of(folder, "incidents.json").toString(), loadedVehicles);
+        Operator loadedOperator = json.loadOperator(Path.of(folder, "operator.json").toString());
+
+        vehicles = loadedVehicles;
+        operator = loadedOperator;
+        manager = new IncidentManager();
+        generator = new IncidentGenerator(random);
+        chargedBlocks.clear();
+        for (Incident incident : loadedIncidents) {
+            manager.registerIncident(incident);
+            generator.registerExistingId(incident.getId());
+        }
+    }
+
+    // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).
+    public synchronized void registerIncident(Incident incident) {
+        manager.registerIncident(incident);
+    }
+
     // Devuelve el incidente activo de mayor prioridad o null si no hay ninguno.
-    public Incident getHighestPriorityIncidentOrNull() {
+    public synchronized Incident getHighestPriorityIncidentOrNull() {
         if (manager.getActiveIncidentCount() == 0) {
             return null;
         }
@@ -150,31 +239,31 @@ public class GameController {
     }
 
     // Devuelve los incidentes activos ordenados por prioridad.
-    public LinkedList<Incident> getActiveIncidentsByPriority() {
+    public synchronized LinkedList<Incident> getActiveIncidentsByPriority() {
         return manager.getActiveIncidentsByPriority();
     }
 
-    public int getActiveIncidentCount() {
+    public synchronized int getActiveIncidentCount() {
         return manager.getActiveIncidentCount();
     }
 
-    public int getActiveAccidentCount() {
+    public synchronized int getActiveAccidentCount() {
         return manager.getActiveAccidentCount();
     }
 
-    public int getActiveTheftCount() {
+    public synchronized int getActiveTheftCount() {
         return manager.getActiveTheftCount();
     }
 
-    public int getActiveFireCount() {
+    public synchronized int getActiveFireCount() {
         return manager.getActiveFireCount();
     }
 
-    public int getAvailableVehicleCount() {
+    public synchronized int getAvailableVehicleCount() {
         return manager.countAvailableVehicles(vehicles);
     }
 
-    public int getScore() {
+    public synchronized int getScore() {
         return operator.getScore();
     }
 

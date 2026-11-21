@@ -4,6 +4,7 @@ import com.icesi.exceptions.PersistenceException;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentStatus;
 import com.icesi.model.IncidentType;
+import com.icesi.model.Operator;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
@@ -95,6 +96,10 @@ public class JsonPersistence {
                 if (incident.getDescription() != null) {
                     obj.put("description", incident.getDescription());
                 }
+                // se guarda el id del vehiculo para volver a unirlos al cargar
+                if (incident.getAssignedVehicle() != null) {
+                    obj.put("assignedVehicleId", incident.getAssignedVehicle().getId());
+                }
                 array.put(obj);
             }
             Path path = Path.of(filePath);
@@ -139,6 +144,65 @@ public class JsonPersistence {
             return incidents;
         } catch (IOException | JSONException | IllegalArgumentException e) {
             throw new PersistenceException("Error al cargar los incidentes desde JSON: " + e.getMessage(), e);
+        }
+    }
+
+    // Guarda la posicion y el puntaje del operador en JSON.
+    public void saveOperator(Operator operator, String filePath) {
+        if (operator == null || filePath == null || filePath.isBlank()) {
+            throw new IllegalArgumentException("El operador y la ruta no pueden ser nulos");
+        }
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("row", operator.getRow());
+            obj.put("column", operator.getColumn());
+            obj.put("score", operator.getScore());
+            Path path = Path.of(filePath);
+            if (path.getParent() != null) {
+                Files.createDirectories(path.getParent());
+            }
+            Files.writeString(path, obj.toString(2));
+        } catch (IOException | JSONException e) {
+            throw new PersistenceException("Error al guardar el operador en JSON: " + e.getMessage(), e);
+        }
+    }
+
+    // Carga el operador (posicion y puntaje) desde JSON.
+    public Operator loadOperator(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new IllegalArgumentException("La ruta del archivo no puede ser nula");
+        }
+        try {
+            JSONObject obj = new JSONObject(Files.readString(Path.of(filePath)));
+            Operator operator = new Operator(obj.getInt("row"), obj.getInt("column"));
+            operator.addScore(obj.optInt("score", 0));
+            return operator;
+        } catch (IOException | JSONException e) {
+            throw new PersistenceException("Error al cargar el operador desde JSON: " + e.getMessage(), e);
+        }
+    }
+
+    // Carga los incidentes y los vuelve a unir con su vehiculo asignado (buscandolo por id en la lista).
+    public LinkedList<Incident> loadIncidents(String filePath, LinkedList<Vehicle> vehicles) {
+        LinkedList<Incident> incidents = loadIncidents(filePath);
+        try {
+            JSONArray array = new JSONArray(Files.readString(Path.of(filePath)));
+            for (int i = 0; i < array.length(); i++) {
+                String vehicleId = array.getJSONObject(i).optString("assignedVehicleId", null);
+                if (vehicleId == null) {
+                    continue;
+                }
+                Incident incident = incidents.get(i);
+                for (Vehicle vehicle : vehicles) {
+                    if (vehicle.getId().equals(vehicleId)) {
+                        incident.setAssignedVehicle(vehicle);
+                        vehicle.setAssignedIncident(incident);
+                    }
+                }
+            }
+            return incidents;
+        } catch (IOException | JSONException e) {
+            throw new PersistenceException("Error al unir incidentes y vehiculos: " + e.getMessage(), e);
         }
     }
 }

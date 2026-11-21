@@ -110,3 +110,22 @@ Densidad de errores-fallos = 0.0 (0/81)
 Confiabilidad = 1.0
 Completitud = 4.76 (81/17)
 ![Iteración 15](docs/screenshots/iteracion_15.png)
+## Interfaz gráfica (Entrega 3)
+
+Ejecutar con `mvn javafx:run` (o desde IntelliJ: Maven → Plugins → javafx → javafx:run).
+
+| Tecla | Acción |
+|---|---|
+| W A S D / flechas | Mover al operador |
+| U | Deshacer movimiento (pila) |
+| C / M / I | Centro de Monitoreo, Mapa con incidentes, Panel de Incidentes |
+| TAB / ENTER / R | Elegir incidente, despachar la unidad sugerida, resolver |
+| G | Generar un incidente |
+| P | Pausar |
+| F5 / F9 | Guardar / cargar partida (JSON en `data/partida`) |
+| H | Ayuda |
+| N | Sonido on / off |
+
+**Reglas del turno:** dura 5 minutos; se pierde si hay 10 incidentes activos a la vez. Resolver en menos de 30 s da +50 puntos y un incidente ALTO sin unidad resta 25 cada 30 s. Los incidentes llegan más seguido a medida que sube el puntaje. El récord se guarda en `data/highscore.txt`.
+
+**Concurrencia:** `IncidentSpawner` (genera incidentes) y `ShiftTimer` (reloj del turno) corren en hilos propios; `GameController` usa métodos `synchronized` y la interfaz se actualiza con `Platform.runLater`.

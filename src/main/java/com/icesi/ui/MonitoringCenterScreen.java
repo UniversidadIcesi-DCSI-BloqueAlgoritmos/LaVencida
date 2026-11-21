@@ -106,7 +106,7 @@ public class MonitoringCenterScreen implements GameScreen {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
                 {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
-                {"N", "SONIDO ON / OFF"}
+                {"N", "SONIDO ON / OFF"}, {"F5 / F9", "GUARDAR / CARGAR"}
         };
         for (int i = 0; i < controls.length; i++) {
             Label key = styled(new Label(controls[i][0]), "hud-key-active");

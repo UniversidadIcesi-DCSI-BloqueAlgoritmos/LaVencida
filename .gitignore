@@ -37,3 +37,5 @@ build/
 
 ### Mac OS ###
 .DS_Store
+### Partidas y record guardados por el juego ###
+data/

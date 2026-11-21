@@ -20,8 +20,8 @@
     -fx-border-color: #fff1e8, #000000;
     -fx-border-width: 0 0 4 0, 0 0 2 0;
     -fx-border-insets: 0, 0 0 4 0;
-    -fx-padding: 10 18 14 18;
-    -fx-spacing: 18;
+    -fx-padding: 10 12 14 12;
+    -fx-spacing: 10;
 }
 
 .hud-item {
@@ -34,15 +34,15 @@
 .hud-free   { -fx-text-fill: #00e436; }
 
 .hud-key {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #c2c3c7;
 }
 
 .hud-key-active {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #000000;
     -fx-background-color: #ffec27;
-    -fx-padding: 2 6 2 6;
+    -fx-padding: 2 5 2 5;
 }
 
 /* ---------- paneles con marco pixel ---------- */
@@ -274,3 +274,34 @@
     -fx-font-size: 11px;
     -fx-padding: 4 8 4 8;
 }
+
+/* reloj del turno en el HUD */
+.hud-timer { -fx-text-fill: #fff1e8; }
+.hud-timer-low { -fx-text-fill: #ff004d; }
+
+/* fin del turno */
+.shift-end-background { -fx-background-color: rgba(0, 0, 0, 0.75); }
+.shift-end-box {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 2;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 36 56 36 56;
+}
+.shift-end-score {
+    -fx-font-size: 28px;
+    -fx-text-fill: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 3, 3);
+}
+.shift-end-record { -fx-font-size: 16px; -fx-text-fill: #c2c3c7; }
+.shift-end-record-new { -fx-font-size: 20px; -fx-text-fill: #00e436; -fx-effect: dropshadow(one-pass-box, #008751, 0, 0, 2, 2); }
+
+/* ventana de ayuda */
+.help-text { -fx-font-size: 14px; -fx-text-fill: #fff1e8; }
+
+/* tarjeta marcada con TAB o clic */
+.incident-card-focus { -fx-effect: dropshadow(gaussian, #29adff, 16, 0.7, 0, 0); }
+
+/* ventana de opciones */
+.options-item { -fx-font-size: 20px; -fx-text-fill: #c2c3c7; }
+.options-selected { -fx-font-size: 22px; -fx-text-fill: #ffec27; -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 2, 2); }
