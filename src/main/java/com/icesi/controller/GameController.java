@@ -13,6 +13,8 @@ import com.icesi.structures.LinkedList;
 import java.util.Random;
 
 // Controlador de la interfaz grafica (MVC): recibe las acciones del jugador y las traduce en operaciones del modelo.
+// Los metodos que tocan los incidentes son synchronized porque el generador de incidentes corre en otro hilo:
+// asi nunca se lee la lista mientras el otro hilo la esta cambiando.
 public class GameController {
 
     private CityMap cityMap;
@@ -52,7 +54,7 @@ public class GameController {
     }
 
     // Mueve al operador si la celda destino es transitable; retorna true si se movio.
-    public boolean moveOperator(Direction direction) {
+    public synchronized boolean moveOperator(Direction direction) {
         if (direction == null) {
             return false;
         }
@@ -79,7 +81,7 @@ public class GameController {
     }
 
     // Deshace el ultimo movimiento del operador; retorna false si no habia movimientos.
-    public boolean undoOperatorMove() {
+    public synchronized boolean undoOperatorMove() {
         // si la pila esta vacia no hay nada que deshacer, pero el juego sigue
         if (operator.getMovementCount() == 0) {
             return false;
@@ -89,7 +91,7 @@ public class GameController {
     }
 
     // Genera un robo o un incendio aleatorio y lo registra como activo.
-    public Incident spawnRandomIncident() {
+    public synchronized Incident spawnRandomIncident() {
         Incident incident;
         if (random.nextBoolean()) {
             incident = generator.generateRandomTheft();
@@ -101,25 +103,25 @@ public class GameController {
     }
 
     // Propone el vehiculo disponible mas adecuado para el incidente.
-    public Vehicle proposeVehicle(Incident incident) {
+    public synchronized Vehicle proposeVehicle(Incident incident) {
         return manager.proposeCandidateVehicle(incident, vehicles);
     }
 
     // Asigna el vehiculo al incidente usando sus IDs.
-    public void assignVehicle(String vehicleId, String incidentId) {
+    public synchronized void assignVehicle(String vehicleId, String incidentId) {
         Vehicle vehicle = findVehicleById(vehicleId);
         Incident incident = manager.findIncidentById(incidentId);
         manager.assignVehicle(vehicle, incident);
     }
 
     // Finaliza la atencion del incidente y retorna los puntos ganados.
-    public int resolveIncident(String incidentId) {
+    public synchronized int resolveIncident(String incidentId) {
         Incident incident = manager.findIncidentById(incidentId);
         return manager.finishAttention(incident, operator);
     }
 
     // Devuelve el incidente activo de mayor prioridad o null si no hay ninguno.
-    public Incident getHighestPriorityIncidentOrNull() {
+    public synchronized Incident getHighestPriorityIncidentOrNull() {
         if (manager.getActiveIncidentCount() == 0) {
             return null;
         }
@@ -150,31 +152,31 @@ public class GameController {
     }
 
     // Devuelve los incidentes activos ordenados por prioridad.
-    public LinkedList<Incident> getActiveIncidentsByPriority() {
+    public synchronized LinkedList<Incident> getActiveIncidentsByPriority() {
         return manager.getActiveIncidentsByPriority();
     }
 
-    public int getActiveIncidentCount() {
+    public synchronized int getActiveIncidentCount() {
         return manager.getActiveIncidentCount();
     }
 
-    public int getActiveAccidentCount() {
+    public synchronized int getActiveAccidentCount() {
         return manager.getActiveAccidentCount();
     }
 
-    public int getActiveTheftCount() {
+    public synchronized int getActiveTheftCount() {
         return manager.getActiveTheftCount();
     }
 
-    public int getActiveFireCount() {
+    public synchronized int getActiveFireCount() {
         return manager.getActiveFireCount();
     }
 
-    public int getAvailableVehicleCount() {
+    public synchronized int getAvailableVehicleCount() {
         return manager.countAvailableVehicles(vehicles);
     }
 
-    public int getScore() {
+    public synchronized int getScore() {
         return operator.getScore();
     }
 
