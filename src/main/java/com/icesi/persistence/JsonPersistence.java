@@ -4,6 +4,7 @@ import com.icesi.exceptions.PersistenceException;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentStatus;
 import com.icesi.model.IncidentType;
+import com.icesi.model.Operator;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
@@ -140,5 +141,19 @@ public class JsonPersistence {
         } catch (IOException | JSONException | IllegalArgumentException e) {
             throw new PersistenceException("Error al cargar los incidentes desde JSON: " + e.getMessage(), e);
         }
+    }
+
+    // Guarda la posicion y el puntaje del operador en JSON.
+    public void saveOperator(Operator operator, String filePath) {
+    }
+
+    // Carga el operador (posicion y puntaje) desde JSON.
+    public Operator loadOperator(String filePath) {
+        return null;
+    }
+
+    // Carga los incidentes y los vuelve a unir con su vehiculo asignado (buscandolo por id en la lista).
+    public LinkedList<Incident> loadIncidents(String filePath, LinkedList<Vehicle> vehicles) {
+        return new LinkedList<>();
     }
 }

@@ -38,6 +38,10 @@ public class IncidentGenerator {
     }
 
     // Genera un incidente aleatorio de tipo THEFT en una zona de la ciudad.
+    // Avisa al generador de un id que ya existe (de una partida cargada) para no repetirlo.
+    public void registerExistingId(String id) {
+    }
+
     public Incident generateRandomTheft() {
         theftCounter++;
         String id = String.format("THEFT-%03d", theftCounter);

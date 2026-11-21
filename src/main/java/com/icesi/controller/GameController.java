@@ -173,6 +173,14 @@ public class GameController {
         return penalty;
     }
 
+    // Guarda la partida (operador, vehiculos e incidentes activos) en archivos JSON dentro de la carpeta.
+    public synchronized void saveGame(String folder) {
+    }
+
+    // Carga la partida guardada en la carpeta y reemplaza la actual.
+    public synchronized void loadGame(String folder) {
+    }
+
     // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).
     public synchronized void registerIncident(Incident incident) {
         manager.registerIncident(incident);
