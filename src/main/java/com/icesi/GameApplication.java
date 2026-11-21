@@ -1,6 +1,7 @@
 package com.icesi;
 
 import com.icesi.controller.GameController;
+import com.icesi.controller.IncidentSpawner;
 import com.icesi.ui.CityMapView;
 import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
@@ -48,8 +49,8 @@ public class GameApplication extends Application {
     private boolean started;
     private boolean paused;
 
-    // cada cuantos segundos aparece un incidente nuevo en la simulacion
-    private static final int SPAWN_SECONDS = 12;
+    // hilo que genera incidentes cada cierto tiempo (cada vez mas seguido segun el puntaje)
+    private IncidentSpawner spawner;
 
     private Map<String, GameScreen> screens = new HashMap<>();
     private GameScreen currentScreen;
@@ -100,10 +101,10 @@ public class GameApplication extends Application {
         refresher.setCycleCount(Animation.INDEFINITE);
         refresher.play();
 
-        // ciclo de la simulacion: cada cierto tiempo pasa algo en la ciudad
-        Timeline simulation = new Timeline(new KeyFrame(Duration.seconds(SPAWN_SECONDS), e -> simulateTick()));
-        simulation.setCycleCount(Animation.INDEFINITE);
-        simulation.play();
+        // la simulacion corre en otro hilo; lo que se dibuja se pasa al hilo de JavaFX con Platform.runLater
+        spawner = new IncidentSpawner(controller, incident -> Platform.runLater(() -> announceIncident(incident)));
+        // al cerrar la ventana se detiene el hilo
+        stage.setOnCloseRequest(e -> spawner.stop());
 
         stage.setTitle("SGMMS - Centro de Monitoreo de Palmira");
         stage.setScene(scene);
@@ -126,6 +127,7 @@ public class GameApplication extends Application {
             titleScreen.getView().setVisible(false);
             toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
             eventLog.add("Turno iniciado. Unidades listas.", EventLog.SYSTEM);
+            spawner.start();
         });
     }
 
@@ -138,13 +140,9 @@ public class GameApplication extends Application {
         }
     }
 
-    // Genera un incidente nuevo y avisa al jugador (si el juego no esta en pausa).
-    private void simulateTick() {
-        if (!started || paused) {
-            return;
-        }
+    // Avisa al jugador del incidente que acaba de generar el hilo (corre en el hilo de JavaFX).
+    private void announceIncident(Incident incident) {
         try {
-            Incident incident = controller.spawnRandomIncident();
             RetroSound.play(RetroSound.Effect.ALERT);
             toasts.show("¡NUEVO " + Texts.of(incident.getType()) + "! " + incident.getId() + " · " + incident.getLocation(),
                     SpriteRegistry.forIncident(incident.getType()));
@@ -186,6 +184,7 @@ public class GameApplication extends Application {
         }
         if (code == KeyCode.P) {
             paused = !paused;
+            spawner.setPaused(paused);
             toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
             eventLog.add(paused ? "Simulacion en pausa." : "Simulacion reanudada.", EventLog.SYSTEM);
             return;
