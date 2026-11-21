@@ -30,6 +30,7 @@ public class CityMapView {
     private double lastTime = -1;
     private double startTime = -1; // momento en que empezo el juego, para que el dia arranque de dia
     private String phaseName = "";
+    private AnimationTimer timer;
     private String focusedIncidentId; // incidente elegido en el panel: se resalta en el mapa
 
     // Arma las capas del mapa y arranca la animacion.
@@ -52,7 +53,7 @@ public class CityMapView {
         mapFrame.setPadding(new Insets(4));
         mapFrame.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
 
-        AnimationTimer timer = new AnimationTimer() {
+        timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
                 double time = now / 1_000_000_000.0;
@@ -77,6 +78,11 @@ public class CityMapView {
 
     public Node getView() {
         return mapFrame;
+    }
+
+    // Detiene la animacion (cuando se cierra la partida).
+    public void stop() {
+        timer.stop();
     }
 
     // Nombre del momento del dia (DIA, ATARDECER, NOCHE...) para mostrarlo en pantalla.

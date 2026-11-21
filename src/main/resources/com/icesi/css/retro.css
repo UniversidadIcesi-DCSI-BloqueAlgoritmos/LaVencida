@@ -278,3 +278,18 @@
 /* reloj del turno en el HUD */
 .hud-timer { -fx-text-fill: #fff1e8; }
 .hud-timer-low { -fx-text-fill: #ff004d; }
+
+/* fin del turno */
+.shift-end-background { -fx-background-color: rgba(0, 0, 0, 0.75); }
+.shift-end-box {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 2;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 36 56 36 56;
+}
+.shift-end-score {
+    -fx-font-size: 28px;
+    -fx-text-fill: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 3, 3);
+}

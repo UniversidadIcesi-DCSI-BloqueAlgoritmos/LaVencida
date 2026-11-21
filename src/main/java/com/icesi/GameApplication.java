@@ -15,6 +15,7 @@ import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
+import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
 import com.icesi.ui.SpriteRegistry;
 import com.icesi.ui.Texts;
@@ -54,18 +55,24 @@ public class GameApplication extends Application {
     private IncidentSpawner spawner;
     // reloj del turno: 5 minutos, tambien en su propio hilo
     private ShiftTimer shiftTimer;
+    private ShiftEndView shiftEndView;
+    private boolean ended;
+    private Stage stage;
+    private CityMapView mapView;
+    private Timeline refresher;
 
     private Map<String, GameScreen> screens = new HashMap<>();
     private GameScreen currentScreen;
 
     @Override
     public void start(Stage stage) {
+        this.stage = stage;
         controller = new GameController();
         hud = new HudBar();
         content = new StackPane();
 
         // el mapa se crea una sola vez para que los vehiculos y el dia sean los mismos en todas las pantallas
-        CityMapView mapView = new CityMapView(controller);
+        mapView = new CityMapView(controller);
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
@@ -83,7 +90,8 @@ public class GameApplication extends Application {
         titleScreen = new TitleScreen();
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
-        root = new StackPane(game, toasts, titleScreen.getView(), new CrtOverlay());
+        shiftEndView = new ShiftEndView();
+        root = new StackPane(game, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -100,7 +108,7 @@ public class GameApplication extends Application {
         showScreen("center");
 
         // la HUD y la pantalla actual se refrescan cuatro veces por segundo
-        Timeline refresher = new Timeline(new KeyFrame(Duration.millis(250), e -> refreshAll()));
+        refresher = new Timeline(new KeyFrame(Duration.millis(250), e -> refreshAll()));
         refresher.setCycleCount(Animation.INDEFINITE);
         refresher.play();
 
@@ -148,9 +156,36 @@ public class GameApplication extends Application {
         }
     }
 
-    // Cada segundo: actualiza el reloj del HUD.
+    // Cada segundo: actualiza el reloj del HUD y revisa si el turno termino.
     private void updateShift() {
         hud.setShiftTime(shiftTimer.formatRemaining(), shiftTimer.getRemainingSeconds() <= 60);
+        checkShiftEnd();
+    }
+
+    // Si se acabo el tiempo o la ciudad se saturo, se detiene todo y se muestra el resultado.
+    private void checkShiftEnd() {
+        if (ended || !started) {
+            return;
+        }
+        ShiftTimer.Result result = shiftTimer.evaluate(controller.getActiveIncidentCount());
+        if (result == ShiftTimer.Result.PLAYING) {
+            return;
+        }
+        ended = true;
+        spawner.stop();
+        shiftTimer.stop();
+        RetroSound.play(result == ShiftTimer.Result.OVERLOADED ? RetroSound.Effect.ERROR : RetroSound.Effect.RESOLVE);
+        eventLog.add(result == ShiftTimer.Result.OVERLOADED ? "¡Ciudad saturada! Fin del turno." : "Fin del turno.", EventLog.SYSTEM);
+        shiftEndView.show(result, controller.getScore());
+    }
+
+    // Empieza una partida nueva desde la pantalla de titulo, en la misma ventana.
+    private void restart() {
+        refresher.stop();
+        mapView.stop();
+        spawner.stop();
+        shiftTimer.stop();
+        new GameApplication().start(stage);
     }
 
     // Avisa al jugador del incidente que acaba de generar el hilo (corre en el hilo de JavaFX).
@@ -162,6 +197,7 @@ public class GameApplication extends Application {
             centerScreen.showEvent("¡ALERTA! " + incident.getDescription() + " (" + incident.getId() + ")");
             eventLog.add(Texts.of(incident.getType()) + " " + incident.getId() + " en " + incident.getLocation(), EventLog.ALERT);
             refreshAll();
+            checkShiftEnd();
         } catch (RuntimeException e) {
             toasts.show("Error en la simulacion: " + e.getMessage(), null);
         }
@@ -178,6 +214,15 @@ public class GameApplication extends Application {
                 RetroSound.play(RetroSound.Effect.MENU);
             } else if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
                 chooseMenuOption();
+            }
+            return;
+        }
+        if (ended) {
+            // con el turno terminado solo sirven ENTER (otra vez) y ESC (salir)
+            if (code == KeyCode.ENTER) {
+                restart();
+            } else if (code == KeyCode.ESCAPE) {
+                Platform.exit();
             }
             return;
         }
