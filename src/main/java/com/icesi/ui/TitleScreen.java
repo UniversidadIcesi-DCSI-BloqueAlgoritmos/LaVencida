@@ -22,7 +22,7 @@ public class TitleScreen {
     private double[] starX;
     private double[] starY;
     private int[] buildingHeights;
-    private static final String[] MENU = {"JUGAR", "SALIR"};
+    private static final String[] MENU = {"JUGAR", "OPCIONES", "SALIR"};
 
     private int selected;          // opcion del menu que esta marcada
     private double[] menuTop = new double[MENU.length]; // donde quedo dibujada cada opcion (para el clic)
@@ -192,9 +192,9 @@ public class TitleScreen {
     // Dibuja el menu: la opcion marcada va en amarillo con flechas que se mueven, las demas en gris.
     private void drawMenu(GraphicsContext gc, double width, double height, double time) {
         double pixel = 5;
-        double top = height * 0.53;
+        double top = height * 0.50;
         for (int i = 0; i < MENU.length; i++) {
-            double y = top + i * 58;
+            double y = top + i * 52;
             menuTop[i] = y;
             if (i == selected) {
                 // las flechas se acercan y se alejan del texto
@@ -209,7 +209,7 @@ public class TitleScreen {
                 drawCentered(gc, MENU[i], y, pixel, RetroTheme.LAVENDER, width);
             }
         }
-        drawCentered(gc, "FLECHAS PARA ELEGIR - ENTER PARA CONFIRMAR", top + MENU.length * 58 + 6, 2, RetroTheme.LIGHT_GRAY, width);
+        drawCentered(gc, "FLECHAS PARA ELEGIR - ENTER PARA CONFIRMAR", top + MENU.length * 52 + 6, 2, RetroTheme.LIGHT_GRAY, width);
     }
 
     // Dibuja la fila de edificios con ventanas que se prenden y apagan.

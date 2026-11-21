@@ -17,6 +17,7 @@ import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.HelpView;
+import com.icesi.ui.OptionsView;
 import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
@@ -64,6 +65,8 @@ public class GameApplication extends Application {
     private ShiftEndView shiftEndView;
     private PauseView pauseView = new PauseView();
     private HelpView helpView = new HelpView();
+    private OptionsView optionsView = new OptionsView();
+    private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
@@ -102,7 +105,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
+        root = new StackPane(game, pauseView, helpView, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -169,6 +172,9 @@ public class GameApplication extends Application {
     private void chooseMenuOption() {
         if (titleScreen.getSelectedOption().equals("SALIR")) {
             Platform.exit();
+        } else if (titleScreen.getSelectedOption().equals("OPCIONES")) {
+            RetroSound.play(RetroSound.Effect.MENU);
+            optionsView.open();
         } else {
             enterGame();
         }
@@ -226,6 +232,34 @@ public class GameApplication extends Application {
             recordLine.getStyleClass().add("shift-end-record");
         }
         shiftEndView.addLine(recordLine);
+    }
+
+    // Teclas de la ventana de opciones: flechas para moverse, ENTER para cambiar, ESC para volver.
+    private void handleOptionsKey(KeyCode code) {
+        if (code == KeyCode.UP || code == KeyCode.W) {
+            optionsView.move(-1);
+            RetroSound.play(RetroSound.Effect.MENU);
+        } else if (code == KeyCode.DOWN || code == KeyCode.S) {
+            optionsView.move(1);
+            RetroSound.play(RetroSound.Effect.MENU);
+        } else if (code == KeyCode.ESCAPE) {
+            optionsView.close();
+        } else if (code == KeyCode.ENTER || code == KeyCode.SPACE) {
+            String option = optionsView.getSelected();
+            if (option.equals(OptionsView.SOUND)) {
+                RetroSound.toggleMute();
+                RetroSound.play(RetroSound.Effect.MENU);
+            } else if (option.equals(OptionsView.CRT)) {
+                // las lineas del monitor viejo se pueden quitar
+                optionsView.setCrtOn(!optionsView.isCrtOn());
+                crtOverlay.setVisible(optionsView.isCrtOn());
+                RetroSound.play(RetroSound.Effect.MENU);
+            } else {
+                optionsView.close();
+            }
+            optionsView.refresh();
+            hud.refresh(controller);
+        }
     }
 
     // Pausa o reanuda los dos hilos (incidentes y reloj).
@@ -288,6 +322,10 @@ public class GameApplication extends Application {
 
     // Teclas globales: navegacion entre pantallas; las demas se las pasa a la pantalla actual.
     private void handleKey(KeyCode code) {
+        if (optionsView.isVisible()) {
+            handleOptionsKey(code);
+            return;
+        }
         if (!started) {
             if (code == KeyCode.UP || code == KeyCode.W) {
                 titleScreen.moveSelection(-1);
