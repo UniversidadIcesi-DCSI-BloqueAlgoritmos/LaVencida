@@ -16,6 +16,7 @@ import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
+import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
 import com.icesi.ui.SpriteRegistry;
@@ -59,6 +60,7 @@ public class GameApplication extends Application {
     // reloj del turno: 5 minutos, tambien en su propio hilo
     private ShiftTimer shiftTimer;
     private ShiftEndView shiftEndView;
+    private PauseView pauseView = new PauseView();
     private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
@@ -97,7 +99,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
+        root = new StackPane(game, pauseView, toasts, shiftEndView, titleScreen.getView(), new CrtOverlay());
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -290,6 +292,9 @@ public class GameApplication extends Application {
             }
             return;
         }
+        if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9) {
+            return;
+        }
         if (currentScreen != null && currentScreen.handleKey(code)) {
             refreshAll();
             return;
@@ -316,6 +321,7 @@ public class GameApplication extends Application {
             paused = !paused;
             spawner.setPaused(paused);
             shiftTimer.setPaused(paused);
+            pauseView.setPaused(paused);
             toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
             eventLog.add(paused ? "Simulacion en pausa." : "Simulacion reanudada.", EventLog.SYSTEM);
             return;
