@@ -1,0 +1,7 @@
+Carpeta de assets del juego.
+
+Si se pone aqui un PNG con el nombre de un sprite, el juego lo usa en vez del dibujo pixel-art:
+  operator.png, patrol.png, ambulance.png, fire_truck.png,
+  theft.png, fire.png, accident.png, house.png, shop.png, tree.png
+
+Recomendado: fondo transparente y tamano cuadrado (16x16, 32x32 o 48x48) para que se vea pixelado.

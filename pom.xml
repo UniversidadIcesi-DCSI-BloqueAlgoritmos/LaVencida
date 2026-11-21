@@ -73,7 +73,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.icesi/com.icesi.HelloApplication</mainClass>
+                            <mainClass>com.icesi/com.icesi.GameApplication</mainClass>
                         </configuration>
                     </execution>
                 </executions>

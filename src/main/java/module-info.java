@@ -1,6 +1,7 @@
 open module com.icesi {
     requires javafx.controls;
     requires javafx.fxml;
+    requires java.desktop;
     requires org.json;
     requires org.junit.jupiter.api;
 
