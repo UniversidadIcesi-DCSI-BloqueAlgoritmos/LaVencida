@@ -14,6 +14,11 @@ public class ShiftTimer implements Runnable {
 
     private Runnable onTick;
     private long stepMillis; // cada cuanto avanza un segundo (1000 en el juego, menos en las pruebas)
+    // el hilo del reloj escribe y la interfaz lee: por eso volatile y metodos synchronized
+    private int elapsedSeconds;
+    private volatile boolean paused;
+    private volatile boolean running;
+    private Thread thread;
 
     // Crea el reloj; onTick se llama cada vez que pasa un segundo.
     public ShiftTimer(Runnable onTick) {
@@ -26,37 +31,86 @@ public class ShiftTimer implements Runnable {
     }
 
     // Descuenta segundos del turno.
-    public void tick(int seconds) {
+    public synchronized void tick(int seconds) {
+        if (paused || seconds <= 0) {
+            return;
+        }
+        elapsedSeconds = Math.min(SHIFT_SECONDS, elapsedSeconds + seconds);
     }
 
-    public int getRemainingSeconds() {
-        return 0;
+    public synchronized int getRemainingSeconds() {
+        return SHIFT_SECONDS - elapsedSeconds;
     }
 
     // Tiempo restante como MM:SS.
     public String formatRemaining() {
-        return "";
+        int remaining = getRemainingSeconds();
+        return String.format("%02d:%02d", remaining / 60, remaining % 60);
     }
 
     public void setPaused(boolean paused) {
+        this.paused = paused;
     }
 
     // Dice como va el turno segun el tiempo y los incidentes activos.
     public Result evaluate(int activeIncidents) {
-        return null;
+        // perder por saturacion pesa mas que acabar el tiempo
+        if (activeIncidents >= MAX_ACTIVE_INCIDENTS) {
+            return Result.OVERLOADED;
+        }
+        if (getRemainingSeconds() == 0) {
+            return Result.TIME_UP;
+        }
+        return Result.PLAYING;
     }
 
-    public void start() {
+    // Arranca el hilo del reloj (si ya estaba corriendo no hace nada).
+    public synchronized void start() {
+        if (running) {
+            return;
+        }
+        running = true;
+        thread = new Thread(this, "reloj-turno");
+        thread.setDaemon(true);
+        thread.start();
     }
 
+    // Detiene el hilo del reloj y espera a que termine.
     public void stop() {
+        running = false;
+        Thread current = thread;
+        if (current != null) {
+            current.interrupt();
+            try {
+                current.join(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            thread = null;
+        }
     }
 
     public boolean isRunning() {
-        return false;
+        return running;
     }
 
+    // Lo que hace el hilo: esperar un segundo, descontarlo y avisar, hasta que se acabe el tiempo o lo detengan.
     @Override
     public void run() {
+        while (running) {
+            try {
+                Thread.sleep(stepMillis);
+            } catch (InterruptedException e) {
+                break;
+            }
+            if (!paused) {
+                tick(1);
+                onTick.run();
+            }
+            if (getRemainingSeconds() == 0) {
+                break;
+            }
+        }
+        running = false;
     }
 }
