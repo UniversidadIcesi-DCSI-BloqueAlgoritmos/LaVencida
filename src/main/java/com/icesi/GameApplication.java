@@ -33,6 +33,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
@@ -114,6 +115,13 @@ public class GameApplication extends Application {
         RetroTheme.apply(scene);
         PixelCursor.install(scene);
         scene.setOnKeyPressed(e -> handleKey(e.getCode()));
+        // JavaFX usa TAB para mover el foco entre botones; aqui lo usamos para elegir incidente
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.TAB) {
+                handleKey(KeyCode.TAB);
+                e.consume();
+            }
+        });
 
         showScreen("center");
 

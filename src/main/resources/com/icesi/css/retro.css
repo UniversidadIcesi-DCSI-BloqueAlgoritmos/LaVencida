@@ -20,8 +20,8 @@
     -fx-border-color: #fff1e8, #000000;
     -fx-border-width: 0 0 4 0, 0 0 2 0;
     -fx-border-insets: 0, 0 0 4 0;
-    -fx-padding: 10 18 14 18;
-    -fx-spacing: 12;
+    -fx-padding: 10 12 14 12;
+    -fx-spacing: 10;
 }
 
 .hud-item {
@@ -34,15 +34,15 @@
 .hud-free   { -fx-text-fill: #00e436; }
 
 .hud-key {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #c2c3c7;
 }
 
 .hud-key-active {
-    -fx-font-size: 12px;
+    -fx-font-size: 11px;
     -fx-text-fill: #000000;
     -fx-background-color: #ffec27;
-    -fx-padding: 2 6 2 6;
+    -fx-padding: 2 5 2 5;
 }
 
 /* ---------- paneles con marco pixel ---------- */
@@ -298,3 +298,6 @@
 
 /* ventana de ayuda */
 .help-text { -fx-font-size: 14px; -fx-text-fill: #fff1e8; }
+
+/* tarjeta marcada con TAB o clic */
+.incident-card-focus { -fx-effect: dropshadow(gaussian, #29adff, 16, 0.7, 0, 0); }

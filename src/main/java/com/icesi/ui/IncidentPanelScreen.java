@@ -6,6 +6,7 @@ import com.icesi.model.IncidentStatus;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
 import com.icesi.model.VehicleType;
+import com.icesi.structures.LinkedList;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -30,7 +31,9 @@ import javafx.util.Duration;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -55,6 +58,10 @@ public class IncidentPanelScreen implements GameScreen {
 
     // incidente que se esta despachando en la caja de dialogo (null si no hay ninguno)
     private Incident selected;
+    // incidente marcado con TAB o con clic: se resalta en el mapa y R lo resuelve
+    private String focusedId;
+    private Map<String, Button> actionButtons = new HashMap<>();
+    private Map<String, Node> cards = new HashMap<>();
     private String lastSignature = "";
     // incidentes que ya tienen tarjeta en pantalla: los nuevos entran con animacion
     private Set<String> shownIds = new HashSet<>();
@@ -185,6 +192,8 @@ public class IncidentPanelScreen implements GameScreen {
         }
         lastSignature = signature;
         cardList.getChildren().clear();
+        actionButtons.clear();
+        cards.clear();
 
         boolean first = true;
         int newCards = 0;
@@ -200,6 +209,7 @@ public class IncidentPanelScreen implements GameScreen {
             first = false;
         }
         shownIds = currentIds;
+        markFocusedCard();
         if (cardList.getChildren().isEmpty()) {
             // sin incidentes: se muestra el operador descansando en vez de una lista vacia
             if (emptyState == null) {
@@ -213,7 +223,7 @@ public class IncidentPanelScreen implements GameScreen {
     public boolean handleKey(KeyCode code) {
         if (code == KeyCode.ESCAPE && selected != null) {
             showIdleDialog();
-            onFocus.accept(null);
+            focus(null);
             return true;
         }
         if (code == KeyCode.ENTER && selected != null) {
@@ -224,7 +234,74 @@ public class IncidentPanelScreen implements GameScreen {
             }
             return true;
         }
+        if (code == KeyCode.TAB) {
+            focusNext();
+            return true;
+        }
+        Incident focused = findActive(focusedId);
+        if (code == KeyCode.ENTER && focused != null && focused.getStatus() == IncidentStatus.PENDING) {
+            // ENTER sobre un incidente marcado con TAB abre su despacho
+            openDispatch(focused);
+            return true;
+        }
+        if (code == KeyCode.R && focused != null) {
+            Button button = actionButtons.get(focusedId);
+            if (button != null && !button.isDisabled() && focused.getStatus() != IncidentStatus.PENDING) {
+                button.fire();
+            } else {
+                RetroSound.play(RetroSound.Effect.ERROR);
+                dispatchText.setText(focused.getStatus() == IncidentStatus.PENDING
+                        ? "Primero asigna una unidad a " + focused.getId() + " (ENTER)."
+                        : "La unidad aun va en camino a " + focused.getId() + ".");
+            }
+            return true;
+        }
         return false;
+    }
+
+    // Marca un incidente: se resalta su tarjeta y se avisa al mapa.
+    private void focus(String incidentId) {
+        focusedId = incidentId;
+        onFocus.accept(incidentId);
+        markFocusedCard();
+    }
+
+    // TAB: pasa al siguiente incidente activo (vuelve al primero despues del ultimo).
+    private void focusNext() {
+        LinkedList<Incident> active = controller.getActiveIncidentsByPriority();
+        if (active.isEmpty()) {
+            return;
+        }
+        int next = 0;
+        for (int i = 0; i < active.size(); i++) {
+            if (active.get(i).getId().equals(focusedId)) {
+                next = (i + 1) % active.size();
+            }
+        }
+        RetroSound.play(RetroSound.Effect.MENU);
+        focus(active.get(next).getId());
+    }
+
+    private Incident findActive(String incidentId) {
+        if (incidentId == null) {
+            return null;
+        }
+        for (Incident incident : controller.getActiveIncidentsByPriority()) {
+            if (incident.getId().equals(incidentId)) {
+                return incident;
+            }
+        }
+        return null;
+    }
+
+    // Pone el brillo azul solo en la tarjeta marcada.
+    private void markFocusedCard() {
+        for (Map.Entry<String, Node> entry : cards.entrySet()) {
+            entry.getValue().getStyleClass().remove("incident-card-focus");
+            if (entry.getKey().equals(focusedId)) {
+                entry.getValue().getStyleClass().add("incident-card-focus");
+            }
+        }
     }
 
     // Crea la tarjeta de un incidente con su icono, datos y botones.
@@ -276,7 +353,9 @@ public class IncidentPanelScreen implements GameScreen {
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("incident-card");
         // clic en la tarjeta: se resalta ese incidente en el mapa
-        card.setOnMouseClicked(e -> onFocus.accept(incident.getId()));
+        card.setOnMouseClicked(e -> focus(incident.getId()));
+        actionButtons.put(incident.getId(), action);
+        cards.put(incident.getId(), card);
         if (isTop) {
             card.getStyleClass().add("incident-card-top");
         }
@@ -290,7 +369,7 @@ public class IncidentPanelScreen implements GameScreen {
     private void openDispatch(Incident incident) {
         RetroSound.play(RetroSound.Effect.MENU);
         selected = incident;
-        onFocus.accept(incident.getId());
+        focus(incident.getId());
         dispatchOptions.getChildren().clear();
 
         String suggestion;
@@ -321,7 +400,7 @@ public class IncidentPanelScreen implements GameScreen {
         Button cancel = pixelButton("✕ CANCELAR", "button-yellow");
         cancel.setOnAction(e -> {
             showIdleDialog();
-            onFocus.accept(null);
+            focus(null);
         });
         dispatchOptions.getChildren().add(cancel);
     }
@@ -388,7 +467,7 @@ public class IncidentPanelScreen implements GameScreen {
         try {
             int points = controller.resolveIncident(incident.getId(), LocalDateTime.now());
             boolean fast = controller.wasLastResolveFast();
-            onFocus.accept(null);
+            focus(null);
             Node card = source.getParent();
             source.setDisable(true);
             TranslateTransition move = new TranslateTransition(Duration.millis(320), card);
