@@ -28,6 +28,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
@@ -385,7 +386,8 @@ public class IncidentPanelScreen implements GameScreen {
     // La tarjeta sale volando a la derecha antes de desaparecer de la lista.
     private void resolve(Incident incident, Button source) {
         try {
-            int points = controller.resolveIncident(incident.getId());
+            int points = controller.resolveIncident(incident.getId(), LocalDateTime.now());
+            boolean fast = controller.wasLastResolveFast();
             onFocus.accept(null);
             Node card = source.getParent();
             source.setDisable(true);
@@ -400,10 +402,15 @@ public class IncidentPanelScreen implements GameScreen {
                 refresh();
             });
             exit.play();
-            dispatchText.setText("¡" + incident.getId() + " resuelto! Ganaste " + points + " puntos.");
-            eventLog.add(incident.getId() + " resuelto  +" + points + " PTS", EventLog.RESOLVED);
+            dispatchText.setText("¡" + incident.getId() + " resuelto! Ganaste " + points + " puntos."
+                    + (fast ? " ¡BONUS POR RAPIDEZ +" + GameController.FAST_BONUS_POINTS + "!" : ""));
+            eventLog.add(incident.getId() + " resuelto  +" + points + " PTS" + (fast ? " (RAPIDO)" : ""), EventLog.RESOLVED);
             RetroSound.play(RetroSound.Effect.RESOLVE);
-            floatPoints(points, source);
+            floatPoints("+" + points + " PTS", source, 0);
+            if (fast) {
+                // el "¡RAPIDO!" sale un poco mas abajo para que no se encime
+                floatPoints("¡RAPIDO!", source, 30);
+            }
         } catch (RuntimeException e) {
             showError(e.getMessage());
         }
@@ -422,14 +429,14 @@ public class IncidentPanelScreen implements GameScreen {
     }
 
     // Animacion de "+N PTS" que sube y se desvanece.
-    private void floatPoints(int points, Node source) {
-        Label label = new Label("+" + points + " PTS");
+    private void floatPoints(String text, Node source, double offsetY) {
+        Label label = new Label(text);
         label.getStyleClass().add("stat-value");
         label.setTextFill(RetroTheme.YELLOW);
         var bounds = source.localToScene(source.getBoundsInLocal());
         var origin = effects.sceneToLocal(bounds.getMinX(), bounds.getMinY());
-        label.setLayoutX(origin.getX() - 30);
-        label.setLayoutY(origin.getY() - 10);
+        label.setLayoutX(origin.getX() - 70);
+        label.setLayoutY(origin.getY() - 10 + offsetY);
         effects.getChildren().add(label);
 
         TranslateTransition rise = new TranslateTransition(Duration.millis(1100), label);

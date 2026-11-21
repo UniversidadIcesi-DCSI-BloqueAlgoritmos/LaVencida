@@ -34,6 +34,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -159,7 +160,22 @@ public class GameApplication extends Application {
     // Cada segundo: actualiza el reloj del HUD y revisa si el turno termino.
     private void updateShift() {
         hud.setShiftTime(shiftTimer.formatRemaining(), shiftTimer.getRemainingSeconds() <= 60);
+        applyPenalties();
         checkShiftEnd();
+    }
+
+    // Quita puntos si hay incidentes ALTOS esperando unidad hace rato, y avisa.
+    private void applyPenalties() {
+        if (paused || ended) {
+            return;
+        }
+        int penalty = controller.applyWaitPenalties(LocalDateTime.now());
+        if (penalty > 0) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            toasts.show("-" + penalty + " PTS  ¡Hay un incidente ALTO sin unidad!", null);
+            eventLog.add("Penalizacion -" + penalty + " PTS por espera", EventLog.ALERT);
+            hud.refresh(controller);
+        }
     }
 
     // Si se acabo el tiempo o la ciudad se saturo, se detiene todo y se muestra el resultado.
