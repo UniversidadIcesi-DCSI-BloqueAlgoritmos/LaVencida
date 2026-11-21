@@ -10,8 +10,10 @@ import com.icesi.model.Operator;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
+import com.icesi.persistence.JsonPersistence;
 import com.icesi.structures.LinkedList;
 
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -175,10 +177,29 @@ public class GameController {
 
     // Guarda la partida (operador, vehiculos e incidentes activos) en archivos JSON dentro de la carpeta.
     public synchronized void saveGame(String folder) {
+        JsonPersistence json = new JsonPersistence();
+        json.saveOperator(operator, Path.of(folder, "operator.json").toString());
+        json.saveVehicles(vehicles, Path.of(folder, "vehicles.json").toString());
+        json.saveIncidents(manager.getActiveIncidentsByPriority(), Path.of(folder, "incidents.json").toString());
     }
 
     // Carga la partida guardada en la carpeta y reemplaza la actual.
     public synchronized void loadGame(String folder) {
+        JsonPersistence json = new JsonPersistence();
+        // primero se lee todo; si algo falla la partida actual queda igual
+        LinkedList<Vehicle> loadedVehicles = json.loadVehicles(Path.of(folder, "vehicles.json").toString());
+        LinkedList<Incident> loadedIncidents = json.loadIncidents(Path.of(folder, "incidents.json").toString(), loadedVehicles);
+        Operator loadedOperator = json.loadOperator(Path.of(folder, "operator.json").toString());
+
+        vehicles = loadedVehicles;
+        operator = loadedOperator;
+        manager = new IncidentManager();
+        generator = new IncidentGenerator(random);
+        chargedBlocks.clear();
+        for (Incident incident : loadedIncidents) {
+            manager.registerIncident(incident);
+            generator.registerExistingId(incident.getId());
+        }
     }
 
     // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).

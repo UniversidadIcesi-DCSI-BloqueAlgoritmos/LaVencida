@@ -40,6 +40,23 @@ public class IncidentGenerator {
     // Genera un incidente aleatorio de tipo THEFT en una zona de la ciudad.
     // Avisa al generador de un id que ya existe (de una partida cargada) para no repetirlo.
     public void registerExistingId(String id) {
+        if (id == null || !id.contains("-")) {
+            return;
+        }
+        int number;
+        try {
+            number = Integer.parseInt(id.substring(id.lastIndexOf('-') + 1));
+        } catch (NumberFormatException e) {
+            return;
+        }
+        // el contador sigue desde el numero mas alto que ya existe
+        if (id.startsWith("THEFT-")) {
+            theftCounter = Math.max(theftCounter, number);
+        } else if (id.startsWith("FIRE-")) {
+            fireCounter = Math.max(fireCounter, number);
+        } else if (id.startsWith("ACC-")) {
+            accidentCounter = Math.max(accidentCounter, number);
+        }
     }
 
     public Incident generateRandomTheft() {
