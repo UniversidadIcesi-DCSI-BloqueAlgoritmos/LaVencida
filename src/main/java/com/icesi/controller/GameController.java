@@ -10,6 +10,7 @@ import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
 import com.icesi.structures.LinkedList;
 
+import java.time.LocalDateTime;
 import java.util.Random;
 
 // Controlador de la interfaz grafica (MVC): recibe las acciones del jugador y las traduce en operaciones del modelo.
@@ -118,6 +119,26 @@ public class GameController {
     public synchronized int resolveIncident(String incidentId) {
         Incident incident = manager.findIncidentById(incidentId);
         return manager.finishAttention(incident, operator);
+    }
+
+    // Finaliza la atencion en el momento indicado; suma el bonus si fue rapido.
+    public synchronized int resolveIncident(String incidentId, LocalDateTime now) {
+        return 0;
+    }
+
+    // Indica si la ultima resolucion gano el bonus de rapidez.
+    public synchronized boolean wasLastResolveFast() {
+        return false;
+    }
+
+    // Cobra la penalizacion a los incidentes ALTOS que siguen esperando unidad; retorna los puntos quitados.
+    public synchronized int applyWaitPenalties(LocalDateTime now) {
+        return 0;
+    }
+
+    // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).
+    public synchronized void registerIncident(Incident incident) {
+        manager.registerIncident(incident);
     }
 
     // Devuelve el incidente activo de mayor prioridad o null si no hay ninguno.
