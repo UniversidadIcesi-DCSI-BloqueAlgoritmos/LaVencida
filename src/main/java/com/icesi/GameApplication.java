@@ -59,6 +59,7 @@ public class GameApplication extends Application {
     // reloj del turno: 5 minutos, tambien en su propio hilo
     private ShiftTimer shiftTimer;
     private ShiftEndView shiftEndView;
+    private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
     private Stage stage;
@@ -215,6 +216,33 @@ public class GameApplication extends Application {
         shiftEndView.addLine(recordLine);
     }
 
+    // F5: guarda la partida en la carpeta data/partida.
+    private void saveGame() {
+        try {
+            controller.saveGame(SAVE_FOLDER);
+            RetroSound.play(RetroSound.Effect.RESOLVE);
+            toasts.show("PARTIDA GUARDADA  [F9] para cargarla", null);
+            eventLog.add("Partida guardada en " + SAVE_FOLDER, EventLog.SYSTEM);
+        } catch (RuntimeException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            toasts.show("No se pudo guardar: " + e.getMessage(), null);
+        }
+    }
+
+    // F9: carga la ultima partida guardada (si existe).
+    private void loadGame() {
+        try {
+            controller.loadGame(SAVE_FOLDER);
+            RetroSound.play(RetroSound.Effect.START);
+            toasts.show("PARTIDA CARGADA", null);
+            eventLog.add("Partida cargada.", EventLog.SYSTEM);
+            refreshAll();
+        } catch (RuntimeException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            toasts.show("No hay partida guardada para cargar (usa F5 primero).", null);
+        }
+    }
+
     // Empieza una partida nueva desde la pantalla de titulo, en la misma ventana.
     private void restart() {
         refresher.stop();
@@ -264,6 +292,14 @@ public class GameApplication extends Application {
         }
         if (currentScreen != null && currentScreen.handleKey(code)) {
             refreshAll();
+            return;
+        }
+        if (code == KeyCode.F5) {
+            saveGame();
+            return;
+        }
+        if (code == KeyCode.F9) {
+            loadGame();
             return;
         }
         if (code == KeyCode.N) {
