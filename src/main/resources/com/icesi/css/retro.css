@@ -274,3 +274,7 @@
     -fx-font-size: 11px;
     -fx-padding: 4 8 4 8;
 }
+
+/* reloj del turno en el HUD */
+.hud-timer { -fx-text-fill: #fff1e8; }
+.hud-timer-low { -fx-text-fill: #ff004d; }

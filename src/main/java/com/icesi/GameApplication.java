@@ -2,6 +2,7 @@ package com.icesi;
 
 import com.icesi.controller.GameController;
 import com.icesi.controller.IncidentSpawner;
+import com.icesi.controller.ShiftTimer;
 import com.icesi.ui.CityMapView;
 import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
@@ -51,6 +52,8 @@ public class GameApplication extends Application {
 
     // hilo que genera incidentes cada cierto tiempo (cada vez mas seguido segun el puntaje)
     private IncidentSpawner spawner;
+    // reloj del turno: 5 minutos, tambien en su propio hilo
+    private ShiftTimer shiftTimer;
 
     private Map<String, GameScreen> screens = new HashMap<>();
     private GameScreen currentScreen;
@@ -104,7 +107,11 @@ public class GameApplication extends Application {
         // la simulacion corre en otro hilo; lo que se dibuja se pasa al hilo de JavaFX con Platform.runLater
         spawner = new IncidentSpawner(controller, incident -> Platform.runLater(() -> announceIncident(incident)));
         // al cerrar la ventana se detiene el hilo
-        stage.setOnCloseRequest(e -> spawner.stop());
+        shiftTimer = new ShiftTimer(() -> Platform.runLater(this::updateShift));
+        stage.setOnCloseRequest(e -> {
+            spawner.stop();
+            shiftTimer.stop();
+        });
 
         stage.setTitle("SGMMS - Centro de Monitoreo de Palmira");
         stage.setScene(scene);
@@ -128,6 +135,7 @@ public class GameApplication extends Application {
             toasts.show("¡TURNO INICIADO! Protege Palmira.", SpriteRegistry.OPERATOR);
             eventLog.add("Turno iniciado. Unidades listas.", EventLog.SYSTEM);
             spawner.start();
+            shiftTimer.start();
         });
     }
 
@@ -138,6 +146,11 @@ public class GameApplication extends Application {
         } else {
             enterGame();
         }
+    }
+
+    // Cada segundo: actualiza el reloj del HUD.
+    private void updateShift() {
+        hud.setShiftTime(shiftTimer.formatRemaining(), shiftTimer.getRemainingSeconds() <= 60);
     }
 
     // Avisa al jugador del incidente que acaba de generar el hilo (corre en el hilo de JavaFX).
@@ -185,6 +198,7 @@ public class GameApplication extends Application {
         if (code == KeyCode.P) {
             paused = !paused;
             spawner.setPaused(paused);
+            shiftTimer.setPaused(paused);
             toasts.show(paused ? "|| SIMULACION EN PAUSA" : "► SIMULACION REANUDADA", null);
             eventLog.add(paused ? "Simulacion en pausa." : "Simulacion reanudada.", EventLog.SYSTEM);
             return;
