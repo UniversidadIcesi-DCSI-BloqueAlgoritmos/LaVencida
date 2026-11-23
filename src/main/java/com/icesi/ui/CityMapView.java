@@ -14,6 +14,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
 // El mapa de la ciudad dibujado en pixel-art: ciudad, noche, incidentes, vehiculos y operador.
 // Se usa una sola vez y se muestra en la pantalla que lo necesite (Mapa o vista dividida).
 public class CityMapView {
@@ -32,6 +35,8 @@ public class CityMapView {
     private String phaseName = "";
     private AnimationTimer timer;
     private String focusedIncidentId; // incidente elegido en el panel: se resalta en el mapa
+    private BiConsumer<Integer, Integer> onCellClicked = (r, c) -> { };
+    private Consumer<String> onIncidentSelected = id -> { };
 
     // Arma las capas del mapa y arranca la animacion.
     public CityMapView(GameController controller) {
@@ -52,6 +57,27 @@ public class CityMapView {
         mapFrame.getStyleClass().add("pixel-panel");
         mapFrame.setPadding(new Insets(4));
         mapFrame.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
+
+        // Interaccion con el raton: clic sobre celda del mapa (demo del curso)
+        spriteLayer.setOnMouseClicked(event -> {
+            int col = (int) (event.getX() / CELL);
+            int row = (int) (event.getY() / CELL);
+            if (row >= 0 && row < size && col >= 0 && col < size) {
+                if (controller.getCityMap().isWalkable(row, col)) {
+                    Incident atCell = findIncidentAt(row, col);
+                    if (atCell != null) {
+                        setFocusedIncident(atCell.getId());
+                        onIncidentSelected.accept(atCell.getId());
+                        RetroSound.play(RetroSound.Effect.MENU);
+                    } else {
+                        onCellClicked.accept(row, col);
+                    }
+                } else {
+                    shake();
+                    RetroSound.play(RetroSound.Effect.ERROR);
+                }
+            }
+        });
 
         timer = new AnimationTimer() {
             @Override
@@ -109,6 +135,24 @@ public class CityMapView {
         shake.setAutoReverse(true);
         shake.setOnFinished(e -> mapFrame.setTranslateX(0));
         shake.play();
+    }
+
+    public void setOnCellClicked(BiConsumer<Integer, Integer> onCellClicked) {
+        this.onCellClicked = onCellClicked;
+    }
+
+    public void setOnIncidentSelected(Consumer<String> onIncidentSelected) {
+        this.onIncidentSelected = onIncidentSelected;
+    }
+
+    private Incident findIncidentAt(int row, int col) {
+        for (Incident incident : controller.getActiveIncidentsByPriority()) {
+            int[] cell = controller.getCellOf(incident);
+            if (cell[0] == row && cell[1] == col) {
+                return incident;
+            }
+        }
+        return null;
     }
 
     // Dibuja todo lo que se mueve: incidentes que pulsan, vehiculos y el operador.

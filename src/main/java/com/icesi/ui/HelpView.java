@@ -30,8 +30,9 @@ public class HelpView extends StackPane {
                 {"W A S D / FLECHAS", "Mover al operador"}, {"U", "Deshacer movimiento"},
                 {"C  M  I", "Centro, Mapa o Incidentes"}, {"ENTER / ESC", "Despachar la sugerida / cancelar"},
                 {"TAB / R", "Elegir incidente / resolver"}, {"G", "Generar un incidente"},
-                {"[+] / INSERT", "Registrar incidente manual"}, {"P", "Pausar"},
-                {"F5 / F9", "Guardar / cargar partida"}, {"N", "Sonido on / off"}
+                {"[+] / INSERT", "Registrar incidente manual"}, {"T / CLIC MAPA", "Simular accidentes (RF-4)"},
+                {"P", "Pausar"}, {"F5 / F9", "Guardar / cargar partida"},
+                {"N", "Sonido on / off"}
         };
         for (int i = 0; i < controls.length; i++) {
             Label key = new Label(controls[i][0]);

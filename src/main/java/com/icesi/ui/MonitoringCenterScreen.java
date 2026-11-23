@@ -43,6 +43,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private VBox logLines;
     private MiniMap miniMap;
     private Runnable onOpenRegistration;
+    private Runnable onOpenSimulation;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -103,7 +104,13 @@ public class MonitoringCenterScreen implements GameScreen {
                 onOpenRegistration.run();
             }
         });
-        HBox buttons = new HBox(12, mapButton, incidentsButton, spawnButton, registerButton);
+        Button simButton = pixelButton("[⚡] SIMULAR ACCIDENTE", null);
+        simButton.setOnAction(e -> {
+            if (onOpenSimulation != null) {
+                onOpenSimulation.run();
+            }
+        });
+        HBox buttons = new HBox(10, mapButton, incidentsButton, spawnButton, registerButton, simButton);
 
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
@@ -112,7 +119,7 @@ public class MonitoringCenterScreen implements GameScreen {
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
-                {"C  M  I", "CAMBIAR DE PANTALLA"},
+                {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
                 {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
                 {"N", "SONIDO ON / OFF"}, {"F5 / F9", "GUARDAR / CARGAR"}
         };
@@ -170,6 +177,10 @@ public class MonitoringCenterScreen implements GameScreen {
 
     public void setOnOpenRegistration(Runnable onOpenRegistration) {
         this.onOpenRegistration = onOpenRegistration;
+    }
+
+    public void setOnOpenSimulation(Runnable onOpenSimulation) {
+        this.onOpenSimulation = onOpenSimulation;
     }
 
     @Override
