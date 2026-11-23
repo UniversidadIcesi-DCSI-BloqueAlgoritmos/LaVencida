@@ -169,4 +169,70 @@ class GameControllerTest {
         assertThrows(DuplicateIncidentException.class,
                 () -> controller.registerIncident(second));
     }
+
+    // RF4 / HU-08 - Caso 11: Detonar accidente por colision entre dos vehiculos.
+    @Test
+    void triggerCollisionAccidentRegistersActiveAccident() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Act
+        Incident accident = controller.triggerCollisionAccident("P-01", "A-01", "Cruce Calle 30 Cra 19");
+
+        // Assert
+        assertNotNull(accident);
+        assertEquals(IncidentType.ACCIDENT, accident.getType());
+        assertEquals(Severity.HIGH, accident.getSeverity());
+        assertEquals(1, controller.getActiveAccidentCount());
+        assertEquals(1, controller.getActiveIncidentCount());
+    }
+
+    // RF4 / HU-09 - Caso 12: Detonar accidente por congestion critica cuando supera el umbral.
+    @Test
+    void triggerCongestionAccidentRegistersActiveAccident() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Act
+        Incident accident = controller.triggerCongestionAccident("Sector La Estacion", 7);
+
+        // Assert
+        assertNotNull(accident);
+        assertEquals(IncidentType.ACCIDENT, accident.getType());
+        assertEquals(Severity.MEDIUM, accident.getSeverity());
+        assertEquals(1, controller.getActiveAccidentCount());
+    }
+
+    // RF4 / HU-10 - Caso 13: Detonar accidente por vehiculo detenido por varios ciclos.
+    @Test
+    void triggerStoppedVehicleAccidentRegistersActiveAccident() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Act
+        Incident accident = controller.triggerStoppedVehicleAccident("F-01", "Zona Industrial Cencar", 4);
+
+        // Assert
+        assertNotNull(accident);
+        assertEquals(IncidentType.ACCIDENT, accident.getType());
+        assertEquals(Severity.MEDIUM, accident.getSeverity());
+        assertEquals(1, controller.getActiveAccidentCount());
+    }
+
+    // Canvas click - Caso 14: Generar accidente en celda especifica del mapa.
+    @Test
+    void spawnAccidentAtCellRegistersActiveAccidentInExactPosition() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Act
+        Incident accident = controller.spawnAccidentAt(4, 4);
+
+        // Assert
+        assertNotNull(accident);
+        assertEquals(1, controller.getActiveAccidentCount());
+        int[] cell = controller.getCellOf(accident);
+        assertEquals(4, cell[0]);
+        assertEquals(4, cell[1]);
+    }
 }

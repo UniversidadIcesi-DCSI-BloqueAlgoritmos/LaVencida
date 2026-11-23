@@ -19,6 +19,7 @@ import com.icesi.ui.RetroTheme;
 import com.icesi.ui.HelpView;
 import com.icesi.ui.IncidentRegistrationDialog;
 import com.icesi.ui.OptionsView;
+import com.icesi.ui.TrafficSimulationDialog;
 import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
@@ -68,6 +69,7 @@ public class GameApplication extends Application {
     private HelpView helpView = new HelpView();
     private OptionsView optionsView = new OptionsView();
     private IncidentRegistrationDialog registrationDialog = new IncidentRegistrationDialog();
+    private TrafficSimulationDialog trafficDialog;
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
@@ -90,6 +92,7 @@ public class GameApplication extends Application {
         mapView = new CityMapView(controller);
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
         centerScreen.setOnOpenRegistration(this::openRegistrationDialog);
+        centerScreen.setOnOpenSimulation(this::openTrafficSimulationDialog);
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         incidentPanel.setOnOpenRegistration(this::openRegistrationDialog);
@@ -104,6 +107,16 @@ public class GameApplication extends Application {
         registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
         registrationDialog.setOnCancel(() -> setPaused(false));
 
+        trafficDialog = new TrafficSimulationDialog(controller);
+        trafficDialog.setOnAccidentGenerated(this::handleAccidentGenerated);
+        trafficDialog.setOnClose(() -> setPaused(false));
+
+        // Interaccion directa con el mapa (demo del curso): clic en celda crea accidente o resalta incidente
+        mapView.setOnCellClicked(this::handleMapCellClicked);
+        mapView.setOnIncidentSelected(incidentId -> {
+            incidentPanel.handleKey(KeyCode.TAB);
+        });
+
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
 
@@ -112,7 +125,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, registrationDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, trafficDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -334,6 +347,37 @@ public class GameApplication extends Application {
         announceIncident(incident);
     }
 
+    // Abre el simulador de accidentes bajo criterios operativos de transito (RF-4).
+    public void openTrafficSimulationDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        trafficDialog.open();
+    }
+
+    // Procesa el accidente detonado desde el simulador de transito.
+    private void handleAccidentGenerated(Incident accident) {
+        setPaused(false);
+        announceIncident(accident);
+    }
+
+    // Genera un accidente directamente al hacer clic en una celda del mapa (demo del curso).
+    private void handleMapCellClicked(int row, int col) {
+        if (!started || ended || paused) {
+            return;
+        }
+        try {
+            Incident accident = controller.spawnAccidentAt(row, col);
+            RetroSound.play(RetroSound.Effect.ALERT);
+            announceIncident(accident);
+            toasts.show("¡ACCIDENTE REPORTADO EN (" + row + ", " + col + ")!", SpriteRegistry.forIncident(accident.getType()));
+        } catch (RuntimeException e) {
+            toasts.show("No se pudo crear accidente: " + e.getMessage(), null);
+        }
+    }
+
     // Avisa al jugador del incidente que acaba de generar el hilo (corre en el hilo de JavaFX).
     private void announceIncident(Incident incident) {
         try {
@@ -384,8 +428,8 @@ public class GameApplication extends Application {
             }
             return;
         }
-        if (registrationDialog.isVisible()) {
-            // el dialogo modal maneja sus propias teclas (ESC / ENTER)
+        if (registrationDialog.isVisible() || (trafficDialog != null && trafficDialog.isVisible())) {
+            // los dialogos modales manejan sus propias teclas (ESC / ENTER)
             return;
         }
         if (code == KeyCode.H && !paused) {
@@ -397,6 +441,10 @@ public class GameApplication extends Application {
         }
         if ((code == KeyCode.INSERT || code == KeyCode.ADD || code == KeyCode.PLUS) && !paused) {
             openRegistrationDialog();
+            return;
+        }
+        if (code == KeyCode.T && !paused) {
+            openTrafficSimulationDialog();
             return;
         }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9) {

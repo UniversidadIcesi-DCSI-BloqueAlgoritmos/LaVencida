@@ -119,6 +119,45 @@ public class GameController {
         return incident;
     }
 
+    // RF4 / HU-08: Detona un accidente por colision entre dos vehiculos.
+    public synchronized Incident triggerCollisionAccident(String vehicle1Id, String vehicle2Id, String location) {
+        Incident accident = generator.checkCollisionAccident(vehicle1Id, vehicle2Id, location);
+        if (accident != null) {
+            manager.registerIncident(accident);
+        }
+        return accident;
+    }
+
+    // RF4 / HU-09: Detona un accidente por congestion critica en una zona.
+    public synchronized Incident triggerCongestionAccident(String zone, int vehicleCount) {
+        Incident accident = generator.checkCongestionAccident(zone, vehicleCount);
+        if (accident != null) {
+            manager.registerIncident(accident);
+        }
+        return accident;
+    }
+
+    // RF4 / HU-10: Detona un accidente por vehiculo detenido durante varios ciclos.
+    public synchronized Incident triggerStoppedVehicleAccident(String vehicleId, String location, int stoppedCycles) {
+        Incident accident = generator.checkStoppedVehicleAccident(vehicleId, location, stoppedCycles);
+        if (accident != null) {
+            manager.registerIncident(accident);
+        }
+        return accident;
+    }
+
+    // Genera un accidente directamente en una celda del mapa (al hacer clic en el Canvas).
+    public synchronized Incident spawnAccidentAt(int row, int column) {
+        int counter = generator.getAccidentCounter() + 1;
+        String id = String.format("ACC-%03d", counter);
+        String location = "Calle Palmira (" + row + ", " + column + ")";
+        Incident accident = new Incident(id, com.icesi.model.IncidentType.ACCIDENT, location, Severity.HIGH);
+        accident.setDescription("Accidente reportado en coordenada (" + row + ", " + column + ")");
+        manager.registerIncident(accident);
+        generator.registerExistingId(id);
+        return accident;
+    }
+
     // Propone el vehiculo disponible mas adecuado para el incidente.
     public synchronized Vehicle proposeVehicle(Incident incident) {
         return manager.proposeCandidateVehicle(incident, vehicles);

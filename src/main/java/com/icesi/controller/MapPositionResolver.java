@@ -18,6 +18,24 @@ public class MapPositionResolver {
             throw new IllegalArgumentException("La ubicacion no puede ser nula ni vacia");
         }
 
+        // Si la ubicacion especifica coordenadas explicitas como "Sector (row, col)"
+        if (location.contains("(") && location.contains(")") && location.contains(",")) {
+            try {
+                int open = location.lastIndexOf('(');
+                int close = location.lastIndexOf(')');
+                String inside = location.substring(open + 1, close);
+                String[] parts = inside.split(",");
+                if (parts.length == 2) {
+                    int r = Integer.parseInt(parts[0].trim());
+                    int c = Integer.parseInt(parts[1].trim());
+                    if (r >= 0 && r < cityMap.getSize() && c >= 0 && c < cityMap.getSize() && cityMap.isWalkable(r, c)) {
+                        return new int[]{r, c};
+                    }
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
         int size = cityMap.getSize();
         int totalCells = size * size;
 
