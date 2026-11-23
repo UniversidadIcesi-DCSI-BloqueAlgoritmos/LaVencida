@@ -42,6 +42,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private EventLog eventLog;
     private VBox logLines;
     private MiniMap miniMap;
+    private Runnable onOpenRegistration;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -96,7 +97,13 @@ public class MonitoringCenterScreen implements GameScreen {
         incidentsButton.setOnAction(e -> navigator.accept("incidents"));
         Button spawnButton = pixelButton("[G] GENERAR INCIDENTE", null);
         spawnButton.setOnAction(e -> spawnIncident());
-        HBox buttons = new HBox(14, mapButton, incidentsButton, spawnButton);
+        Button registerButton = pixelButton("[+] REGISTRAR INCIDENTE", "button-green");
+        registerButton.setOnAction(e -> {
+            if (onOpenRegistration != null) {
+                onOpenRegistration.run();
+            }
+        });
+        HBox buttons = new HBox(12, mapButton, incidentsButton, spawnButton, registerButton);
 
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
@@ -104,7 +111,8 @@ public class MonitoringCenterScreen implements GameScreen {
         keys.setVgap(2);
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
-                {"G", "GENERAR INCIDENTE"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
+                {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
+                {"C  M  I", "CAMBIAR DE PANTALLA"},
                 {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
                 {"N", "SONIDO ON / OFF"}, {"F5 / F9", "GUARDAR / CARGAR"}
         };
@@ -158,6 +166,10 @@ public class MonitoringCenterScreen implements GameScreen {
     @Override
     public Node getView() {
         return root;
+    }
+
+    public void setOnOpenRegistration(Runnable onOpenRegistration) {
+        this.onOpenRegistration = onOpenRegistration;
     }
 
     @Override

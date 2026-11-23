@@ -17,6 +17,7 @@ import com.icesi.model.Incident;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.HelpView;
+import com.icesi.ui.IncidentRegistrationDialog;
 import com.icesi.ui.OptionsView;
 import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
@@ -66,6 +67,7 @@ public class GameApplication extends Application {
     private PauseView pauseView = new PauseView();
     private HelpView helpView = new HelpView();
     private OptionsView optionsView = new OptionsView();
+    private IncidentRegistrationDialog registrationDialog = new IncidentRegistrationDialog();
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
@@ -87,8 +89,10 @@ public class GameApplication extends Application {
         // el mapa se crea una sola vez para que los vehiculos y el dia sean los mismos en todas las pantallas
         mapView = new CityMapView(controller);
         centerScreen = new MonitoringCenterScreen(controller, this::showScreen, eventLog);
+        centerScreen.setOnOpenRegistration(this::openRegistrationDialog);
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
+        incidentPanel.setOnOpenRegistration(this::openRegistrationDialog);
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
         incidentPanel.setOnFocus(mapView::setFocusedIncident);
@@ -96,6 +100,9 @@ public class GameApplication extends Application {
         incidentPanel.setArrivalCheck(mapView::hasArrived);
         // el Mapa de Trafico muestra la ciudad y al lado los incidentes para despachar sin cambiar de pantalla
         screens.put("map", new SplitViewScreen(controller, mapView, incidentPanel));
+
+        registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
+        registrationDialog.setOnCancel(() -> setPaused(false));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -105,7 +112,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -310,6 +317,23 @@ public class GameApplication extends Application {
         new GameApplication().start(stage);
     }
 
+    // Abre el formulario de registro manual de incidentes y pausa el juego mientras se llena.
+    public void openRegistrationDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        registrationDialog.open();
+    }
+
+    // Registra el incidente manual ingresado por el operador.
+    private void handleManualIncidentRegistration(Incident incident) {
+        controller.registerIncident(incident);
+        setPaused(false);
+        announceIncident(incident);
+    }
+
     // Avisa al jugador del incidente que acaba de generar el hilo (corre en el hilo de JavaFX).
     private void announceIncident(Incident incident) {
         try {
@@ -360,11 +384,19 @@ public class GameApplication extends Application {
             }
             return;
         }
+        if (registrationDialog.isVisible()) {
+            // el dialogo modal maneja sus propias teclas (ESC / ENTER)
+            return;
+        }
         if (code == KeyCode.H && !paused) {
             // la ayuda pausa el juego mientras se lee
             setPaused(true);
             helpView.setVisible(true);
             RetroSound.play(RetroSound.Effect.MENU);
+            return;
+        }
+        if ((code == KeyCode.INSERT || code == KeyCode.ADD || code == KeyCode.PLUS) && !paused) {
+            openRegistrationDialog();
             return;
         }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9) {

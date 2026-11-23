@@ -1,6 +1,7 @@
 package com.icesi.ui;
 
 import com.icesi.controller.GameController;
+import com.icesi.exceptions.IncidentNotFoundException;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentStatus;
 import com.icesi.model.Vehicle;
@@ -19,6 +20,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -77,6 +79,11 @@ public class IncidentPanelScreen implements GameScreen {
     private Node compactTitle;
     private Label subtitle;
 
+    // Busqueda binaria por ID y boton de registro manual
+    private TextField searchInput;
+    private Label searchFeedback;
+    private Runnable onOpenRegistration;
+
     // avisa a quien le interese (el mapa) cual incidente se eligio; null si ninguno
     private Consumer<String> onFocus = id -> { };
     // pregunta al mapa si la unidad ya llego; solo entonces se puede resolver
@@ -98,7 +105,42 @@ public class IncidentPanelScreen implements GameScreen {
         fullTitle = PixelFont.createLabel("PANEL DE INCIDENTES", 5, RetroTheme.YELLOW, RetroTheme.PURPLE);
         compactTitle = PixelFont.createLabel("INCIDENTES", 3, RetroTheme.YELLOW, RetroTheme.PURPLE);
         subtitle = styled(new Label("ORDENADOS POR GRAVEDAD (ALTA > MEDIA > BAJA) Y ANTIGUEDAD - ARBOL BINARIO DE BUSQUEDA"), "panel-subtitle");
-        left = new VBox(14, fullTitle, subtitle, scroll);
+
+        // Barra de busqueda binaria por ID y acceso a registrar
+        searchInput = new TextField();
+        searchInput.setPromptText("Buscar ID (ej. THEFT-01)...");
+        searchInput.getStyleClass().add("pixel-input");
+        HBox.setHgrow(searchInput, Priority.ALWAYS);
+
+        Button searchBtn = pixelButton("BUSCAR", "button-blue");
+        searchBtn.getStyleClass().add("button-small");
+        searchBtn.setOnAction(e -> executeBinarySearch());
+
+        Button registerBtn = pixelButton("+ REGISTRAR", "button-green");
+        registerBtn.getStyleClass().add("button-small");
+        registerBtn.setOnAction(e -> {
+            if (onOpenRegistration != null) {
+                onOpenRegistration.run();
+            }
+        });
+
+        Button clearBtn = pixelButton("LIMPIAR", "button-gray");
+        clearBtn.getStyleClass().add("button-small");
+        clearBtn.setOnAction(e -> clearSearch());
+
+        searchInput.setOnAction(e -> executeBinarySearch());
+
+        HBox searchRow = new HBox(8, searchInput, searchBtn, registerBtn, clearBtn);
+        searchRow.setAlignment(Pos.CENTER_LEFT);
+
+        searchFeedback = styled(new Label(), "search-feedback-found");
+        searchFeedback.setVisible(false);
+        searchFeedback.setManaged(false);
+
+        VBox searchSection = new VBox(6, searchRow, searchFeedback);
+        searchSection.getStyleClass().add("search-bar");
+
+        left = new VBox(14, fullTitle, subtitle, searchSection, scroll);
         HBox.setHgrow(left, Priority.ALWAYS);
         VBox.setVgrow(left, Priority.ALWAYS);
 
@@ -135,6 +177,56 @@ public class IncidentPanelScreen implements GameScreen {
     // El mapa dice cuando una unidad ya llego al incidente.
     public void setArrivalCheck(Predicate<Vehicle> hasArrived) {
         this.hasArrived = hasArrived;
+    }
+
+    // Configura la accion para abrir el formulario de registro manual.
+    public void setOnOpenRegistration(Runnable onOpenRegistration) {
+        this.onOpenRegistration = onOpenRegistration;
+    }
+
+    // RF3 / HU-06: Ejecuta la busqueda binaria por ID en el modelo y resalta el incidente.
+    public void executeBinarySearch() {
+        String query = searchInput.getText() != null ? searchInput.getText().trim() : "";
+        if (query.isEmpty()) {
+            clearSearch();
+            return;
+        }
+        try {
+            Incident found = controller.findIncidentById(query);
+            RetroSound.play(RetroSound.Effect.START);
+            searchFeedback.getStyleClass().setAll("search-feedback-found");
+            searchFeedback.setText("★ INCIDENTE ENCONTRADO: " + found.getId() + " · " + Texts.of(found.getType())
+                    + " (" + Texts.of(found.getSeverity()) + ") · " + Texts.of(found.getStatus()) + " · " + found.getLocation());
+            searchFeedback.setVisible(true);
+            searchFeedback.setManaged(true);
+
+            if (found.getStatus() != IncidentStatus.RESOLVED) {
+                focus(found.getId());
+                if (selected == null && found.getStatus() == IncidentStatus.PENDING) {
+                    openDispatch(found);
+                }
+            }
+        } catch (IncidentNotFoundException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            searchFeedback.getStyleClass().setAll("search-feedback-error");
+            searchFeedback.setText("✕ No existe ningún incidente con ID: '" + query + "'");
+            searchFeedback.setVisible(true);
+            searchFeedback.setManaged(true);
+        } catch (RuntimeException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            searchFeedback.getStyleClass().setAll("search-feedback-error");
+            searchFeedback.setText("✕ Error en búsqueda: " + e.getMessage());
+            searchFeedback.setVisible(true);
+            searchFeedback.setManaged(true);
+        }
+    }
+
+    // Limpia la busqueda binaria y oculta el resultado.
+    public void clearSearch() {
+        searchInput.setText("");
+        searchFeedback.setText("");
+        searchFeedback.setVisible(false);
+        searchFeedback.setManaged(false);
     }
 
     @Override
