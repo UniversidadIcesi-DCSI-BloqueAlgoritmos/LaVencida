@@ -11,6 +11,7 @@ import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
 import com.icesi.persistence.JsonPersistence;
+import com.icesi.persistence.SerializationPersistence;
 import com.icesi.structures.LinkedList;
 
 import java.nio.file.Path;
@@ -168,6 +169,46 @@ public class GameController {
         Vehicle vehicle = findVehicleById(vehicleId);
         Incident incident = manager.findIncidentById(incidentId);
         manager.assignVehicle(vehicle, incident);
+    }
+
+    // RF6 / HU-16: Libera un vehiculo asignado a un incidente; el vehiculo vuelve a AVAILABLE y el incidente a PENDING.
+    public synchronized void releaseVehicle(String vehicleId) {
+        Vehicle vehicle = findVehicleById(vehicleId);
+        manager.releaseVehicle(vehicle);
+    }
+
+    // RF6 / HU-16: Cancela el despacho de un incidente en proceso, liberando su vehiculo asignado.
+    public synchronized void cancelIncidentDispatch(String incidentId) {
+        Incident incident = manager.findIncidentById(incidentId);
+        if (incident.getAssignedVehicle() != null) {
+            manager.releaseVehicle(incident.getAssignedVehicle());
+        }
+    }
+
+    // Registra un nuevo vehiculo en la flota del centro de monitoreo.
+    public synchronized void registerVehicle(Vehicle vehicle) {
+        if (vehicle == null) {
+            throw new IllegalArgumentException("El vehiculo no puede ser nulo");
+        }
+        for (Vehicle v : vehicles) {
+            if (v.getId().equalsIgnoreCase(vehicle.getId())) {
+                throw new IllegalArgumentException("Ya existe un vehiculo con id " + vehicle.getId());
+            }
+        }
+        vehicles.addLast(vehicle);
+    }
+
+    // RF16 / HU-22: Guarda el estado del sistema en archivo binario serializable (.dat).
+    public synchronized void saveGameBinary(String filePath) {
+        SerializationPersistence binary = new SerializationPersistence();
+        binary.saveManagerState(manager, filePath);
+    }
+
+    // RF16 / HU-22: Carga el estado del sistema desde archivo binario serializable (.dat).
+    public synchronized void loadGameBinary(String filePath) {
+        SerializationPersistence binary = new SerializationPersistence();
+        IncidentManager loaded = binary.loadManagerState(filePath);
+        this.manager = loaded;
     }
 
     // Finaliza la atencion del incidente y retorna los puntos ganados.

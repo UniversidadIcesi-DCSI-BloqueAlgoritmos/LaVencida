@@ -348,6 +348,10 @@ public class IncidentPanelScreen implements GameScreen {
             }
             return true;
         }
+        if (code == KeyCode.L && focused != null && focused.getStatus() != IncidentStatus.PENDING) {
+            releaseVehicle(focused);
+            return true;
+        }
         return false;
     }
 
@@ -426,27 +430,43 @@ public class IncidentPanelScreen implements GameScreen {
         Region push = new Region();
         HBox.setHgrow(push, Priority.ALWAYS);
 
-        Button action;
+        Node actionNode;
         if (incident.getStatus() == IncidentStatus.PENDING) {
-            action = pixelButton("ASIGNAR", "button-blue");
+            Button action = pixelButton("ASIGNAR", "button-blue");
             action.setOnAction(e -> openDispatch(incident));
-        } else if (!arrived(incident)) {
-            // la unidad todavia va por las calles: no se puede resolver aun
-            action = pixelButton("EN CAMINO...", "button-gray");
-            action.setDisable(true);
+            action.setMinWidth(Region.USE_PREF_SIZE);
+            actionButtons.put(incident.getId(), action);
+            actionNode = action;
         } else {
-            action = pixelButton("RESOLVER", "button-green");
-            action.setOnAction(e -> resolve(incident, action));
+            Button action;
+            if (!arrived(incident)) {
+                // la unidad todavia va por las calles: no se puede resolver aun
+                action = pixelButton("EN CAMINO...", "button-gray");
+                action.setDisable(true);
+            } else {
+                action = pixelButton("RESOLVER", "button-green");
+                action.setOnAction(e -> resolve(incident, action));
+            }
+            action.setMinWidth(Region.USE_PREF_SIZE);
+            actionButtons.put(incident.getId(), action);
+
+            // RF6 / HU-16: Boton para liberar manualmente la unidad y cancelar el despacho
+            Button releaseBtn = pixelButton("[✕] LIBERAR", "button-gray");
+            releaseBtn.getStyleClass().add("button-small");
+            releaseBtn.setOnAction(e -> releaseVehicle(incident));
+            releaseBtn.setMinWidth(Region.USE_PREF_SIZE);
+
+            HBox actionsBox = new HBox(6, action, releaseBtn);
+            actionsBox.setAlignment(Pos.CENTER_RIGHT);
+            actionNode = actionsBox;
         }
 
-        action.setMinWidth(Region.USE_PREF_SIZE);
         int iconSize = compact ? 32 : 48;
-        HBox card = new HBox(compact ? 10 : 14, SpriteRegistry.createIcon(SpriteRegistry.forIncident(incident.getType()), iconSize), info, push, action);
+        HBox card = new HBox(compact ? 10 : 14, SpriteRegistry.createIcon(SpriteRegistry.forIncident(incident.getType()), iconSize), info, push, actionNode);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("incident-card");
         // clic en la tarjeta: se resalta ese incidente en el mapa
         card.setOnMouseClicked(e -> focus(incident.getId()));
-        actionButtons.put(incident.getId(), action);
         cards.put(incident.getId(), card);
         if (isTop) {
             card.getStyleClass().add("incident-card-top");
@@ -455,6 +475,19 @@ public class IncidentPanelScreen implements GameScreen {
             card.getStyleClass().add("incident-card-high");
         }
         return card;
+    }
+
+    // RF6 / HU-16: Cancela el despacho del incidente y libera la unidad de vuelta a disponible.
+    private void releaseVehicle(Incident incident) {
+        if (incident == null || incident.getAssignedVehicle() == null) {
+            return;
+        }
+        String vehicleId = incident.getAssignedVehicle().getId();
+        controller.cancelIncidentDispatch(incident.getId());
+        RetroSound.play(RetroSound.Effect.MENU);
+        eventLog.add("Unidad " + vehicleId + " liberada de " + incident.getId() + " (vuelve a pendiente)", EventLog.SYSTEM);
+        lastSignature = ""; // Forzar refresco
+        refresh();
     }
 
     // Abre la caja de dialogo para elegir que vehiculo enviar al incidente.

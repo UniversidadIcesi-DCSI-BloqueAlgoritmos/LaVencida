@@ -10,8 +10,11 @@ import com.icesi.model.Operator;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
+import com.icesi.model.VehicleType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -234,5 +237,61 @@ class GameControllerTest {
         int[] cell = controller.getCellOf(accident);
         assertEquals(4, cell[0]);
         assertEquals(4, cell[1]);
+    }
+
+    // RF6 / HU-16 - Caso 15: Liberar vehiculo cancela el despacho y devuelve la unidad a disponible.
+    @Test
+    void cancelIncidentDispatchFreesVehicleAndRestoresPending() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident incident = controller.spawnRandomIncident();
+        String vehicleId = controller.proposeVehicle(incident).getId();
+        controller.assignVehicle(vehicleId, incident.getId());
+
+        // Act
+        controller.cancelIncidentDispatch(incident.getId());
+
+        // Assert
+        Vehicle vehicle = controller.findVehicleById(vehicleId);
+        assertEquals(VehicleStatus.AVAILABLE, vehicle.getStatus());
+        assertNull(vehicle.getAssignedIncident());
+        assertEquals(com.icesi.model.IncidentStatus.PENDING, incident.getStatus());
+        assertNull(incident.getAssignedVehicle());
+    }
+
+    // Registro de vehiculos - Caso 16: Registrar nuevo vehiculo lo agrega a la flota y valida duplicados.
+    @Test
+    void registerVehicleAddsUnitAndRejectsDuplicate() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Vehicle newAmbulance = new Vehicle("A-99", VehicleType.AMBULANCE, "Hospital Sur");
+
+        // Act
+        controller.registerVehicle(newAmbulance);
+
+        // Assert
+        Vehicle found = controller.findVehicleById("A-99");
+        assertNotNull(found);
+        assertEquals(VehicleType.AMBULANCE, found.getType());
+        assertThrows(IllegalArgumentException.class,
+                () -> controller.registerVehicle(new Vehicle("A-99", VehicleType.PATROL, "Estacion Norte")));
+    }
+
+    // RF16 / HU-22 - Caso 17: Guardado y carga binaria (.dat) persiste los incidentes serializados.
+    @Test
+    void saveAndLoadBinaryStateRestoresIncidents(@TempDir Path tempDir) {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident inc = controller.spawnRandomIncident();
+        Path datFile = tempDir.resolve("test_partida.dat");
+
+        // Act
+        controller.saveGameBinary(datFile.toString());
+        GameController restoredController = createController(8, 8);
+        restoredController.loadGameBinary(datFile.toString());
+
+        // Assert
+        assertEquals(1, restoredController.getActiveIncidentCount());
+        assertNotNull(restoredController.findIncidentById(inc.getId()));
     }
 }
