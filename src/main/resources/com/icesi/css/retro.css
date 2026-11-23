@@ -305,3 +305,109 @@
 /* ventana de opciones */
 .options-item { -fx-font-size: 20px; -fx-text-fill: #c2c3c7; }
 .options-selected { -fx-font-size: 22px; -fx-text-fill: #ffec27; -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 2, 2); }
+
+/* ---------- campos de texto y controles de formulario retro ---------- */
+.text-field, .pixel-input {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-color: #000000;
+    -fx-text-fill: #fff1e8;
+    -fx-prompt-text-fill: #5f574f;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 6 10 6 10;
+}
+
+.text-field:focused, .pixel-input:focused {
+    -fx-border-color: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 3, 3);
+}
+
+.combo-box, .pixel-combo-box {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-color: #000000;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 2 6 2 6;
+}
+
+.combo-box:focused, .pixel-combo-box:focused {
+    -fx-border-color: #ffec27;
+}
+
+.combo-box .cell, .pixel-combo-box .cell {
+    -fx-text-fill: #fff1e8;
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow, .pixel-combo-box .arrow {
+    -fx-background-color: #ffec27;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #000000;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+}
+
+.combo-box-popup .list-cell {
+    -fx-text-fill: #fff1e8;
+    -fx-background-color: #000000;
+    -fx-padding: 6 10 6 10;
+}
+
+.combo-box-popup .list-cell:filled:hover, .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #1d2b53;
+    -fx-text-fill: #ffec27;
+}
+
+/* ---------- formulario modal de registro de incidentes ---------- */
+.form-modal-box {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 3;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 24 32 24 32;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 8, 8);
+    -fx-min-width: 540;
+    -fx-max-width: 600;
+}
+
+.form-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #ffec27;
+}
+
+.form-error {
+    -fx-font-size: 13px;
+    -fx-text-fill: #ff004d;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 2, 2);
+}
+
+/* ---------- barra de busqueda binaria ---------- */
+.search-bar {
+    -fx-background-color: #000000;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-padding: 8 12 8 12;
+    -fx-spacing: 10;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.search-feedback-found {
+    -fx-font-size: 12px;
+    -fx-text-fill: #00e436;
+}
+
+.search-feedback-error {
+    -fx-font-size: 12px;
+    -fx-text-fill: #ff004d;
+}

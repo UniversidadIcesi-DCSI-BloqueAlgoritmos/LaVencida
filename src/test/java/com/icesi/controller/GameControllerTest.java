@@ -1,10 +1,13 @@
 package com.icesi.controller;
 
+import com.icesi.exceptions.DuplicateIncidentException;
+import com.icesi.exceptions.IncidentNotFoundException;
 import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentType;
 import com.icesi.model.Operator;
+import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
 import org.junit.jupiter.api.Test;
@@ -123,5 +126,47 @@ class GameControllerTest {
         // Act & Assert
         assertThrows(IllegalArgumentException.class,
                 () -> controller.findVehicleById("X-99"));
+    }
+
+    // RF3 / HU-06 - Caso 8: Buscar un incidente existente por su ID con busqueda binaria lo retorna exitosamente.
+    @Test
+    void findIncidentByIdReturnsMatchingIncident() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident manual = new Incident("INC-777", IncidentType.THEFT, "Parque Bolivar", Severity.HIGH);
+        controller.registerIncident(manual);
+
+        // Act
+        Incident found = controller.findIncidentById("INC-777");
+
+        // Assert
+        assertNotNull(found);
+        assertEquals("INC-777", found.getId());
+        assertEquals(IncidentType.THEFT, found.getType());
+    }
+
+    // RF3 / HU-06 - Caso 9: Buscar un incidente con ID inexistente lanza IncidentNotFoundException.
+    @Test
+    void findIncidentByIdThrowsWhenNotFound() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Act & Assert
+        assertThrows(IncidentNotFoundException.class,
+                () -> controller.findIncidentById("NO-EXISTE"));
+    }
+
+    // RF3 / HU-05 - Caso 10: Registrar un incidente con ID duplicado lanza DuplicateIncidentException.
+    @Test
+    void registerIncidentWithDuplicateIdThrowsException() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident first = new Incident("INC-DUPLICADO", IncidentType.THEFT, "Parque Bolivar", Severity.LOW);
+        Incident second = new Incident("INC-DUPLICADO", IncidentType.FIRE, "Barrio El Prado", Severity.HIGH);
+        controller.registerIncident(first);
+
+        // Act & Assert
+        assertThrows(DuplicateIncidentException.class,
+                () -> controller.registerIncident(second));
     }
 }

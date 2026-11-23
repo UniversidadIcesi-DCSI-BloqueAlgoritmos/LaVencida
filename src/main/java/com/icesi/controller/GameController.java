@@ -202,9 +202,20 @@ public class GameController {
         }
     }
 
-    // Registra un incidente que ya existe (sirve para las pruebas y para cargar partidas).
+    // Registra un incidente manual o existente (sirve para las pruebas, registro en UI y cargar partidas).
     public synchronized void registerIncident(Incident incident) {
         manager.registerIncident(incident);
+        if (incident != null && incident.getId() != null) {
+            generator.registerExistingId(incident.getId());
+        }
+    }
+
+    // RF3 / HU-06: Busca un incidente por id mediante busqueda binaria; lanza IncidentNotFoundException si no existe.
+    public synchronized Incident findIncidentById(String incidentId) {
+        if (incidentId == null || incidentId.isBlank()) {
+            throw new IllegalArgumentException("El id del incidente no puede ser nulo ni vacio");
+        }
+        return manager.findIncidentById(incidentId.trim());
     }
 
     // Devuelve el incidente activo de mayor prioridad o null si no hay ninguno.
