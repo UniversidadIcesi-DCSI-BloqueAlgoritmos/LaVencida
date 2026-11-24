@@ -12,6 +12,7 @@ import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleType;
 import com.icesi.persistence.JsonPersistence;
 import com.icesi.persistence.SerializationPersistence;
+import com.icesi.structures.BinarySearchTree;
 import com.icesi.structures.LinkedList;
 
 import java.nio.file.Path;
@@ -332,6 +333,33 @@ public class GameController {
     // Devuelve los incidentes activos ordenados por prioridad.
     public synchronized LinkedList<Incident> getActiveIncidentsByPriority() {
         return manager.getActiveIncidentsByPriority();
+    }
+
+    // Devuelve el arbol binario de busqueda (BST) de incidentes activos por prioridad.
+    public synchronized BinarySearchTree<Incident> getActiveIncidentsTree() {
+        return manager.getActiveIncidentsTree();
+    }
+
+    // Indica si una celda corresponde a un corredor arterial de emergencia (MAIN_ROAD).
+    public boolean isCorridorCell(int row, int column) {
+        if (!cityMap.isInsideBounds(row, column)) {
+            return false;
+        }
+        return cityMap.getCell(row, column) == CityMap.MAIN_ROAD;
+    }
+
+    // Cuenta el total de celdas que conforman los corredores de emergencia en la red vial.
+    public int countCorridorCells() {
+        int count = 0;
+        int size = cityMap.getSize();
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                if (cityMap.getCell(r, c) == CityMap.MAIN_ROAD) {
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 
     public synchronized int getActiveIncidentCount() {

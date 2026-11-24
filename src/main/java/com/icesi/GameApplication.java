@@ -4,12 +4,14 @@ import com.icesi.controller.GameController;
 import com.icesi.controller.IncidentSpawner;
 import com.icesi.controller.ShiftTimer;
 import com.icesi.persistence.HighScoreStore;
+import com.icesi.ui.BinaryTreeScreen;
 import com.icesi.ui.CityMapView;
 import com.icesi.ui.CrtOverlay;
 import com.icesi.ui.EventLog;
 import com.icesi.ui.GameScreen;
 import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
+import com.icesi.ui.MobilityDialog;
 import com.icesi.ui.MonitoringCenterScreen;
 import com.icesi.ui.PixelCursor;
 import com.icesi.ui.PixelTransition;
@@ -73,6 +75,8 @@ public class GameApplication extends Application {
     private IncidentRegistrationDialog registrationDialog = new IncidentRegistrationDialog();
     private VehicleRegistrationDialog vehicleDialog;
     private TrafficSimulationDialog trafficDialog;
+    private MobilityDialog mobilityDialog;
+    private BinaryTreeScreen binaryTreeScreen;
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
     private static final String BINARY_SAVE_FILE = "data/partida.dat";
@@ -100,13 +104,22 @@ public class GameApplication extends Application {
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         incidentPanel.setOnOpenRegistration(this::openRegistrationDialog);
+        incidentPanel.setNavigator(this::showScreen);
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
         incidentPanel.setOnFocus(mapView::setFocusedIncident);
         // solo se puede resolver cuando la unidad ya llego en el mapa
         incidentPanel.setArrivalCheck(mapView::hasArrived);
+
         // el Mapa de Trafico muestra la ciudad y al lado los incidentes para despachar sin cambiar de pantalla
-        screens.put("map", new SplitViewScreen(controller, mapView, incidentPanel));
+        SplitViewScreen splitScreen = new SplitViewScreen(controller, mapView, incidentPanel);
+        splitScreen.setOnOpenMobility(this::openMobilityDialog);
+        screens.put("map", splitScreen);
+
+        // Pantalla visual del arbol binario BST de prioridad de incidentes
+        binaryTreeScreen = new BinaryTreeScreen(controller, this::showScreen);
+        binaryTreeScreen.setOnOpenRegistration(this::openRegistrationDialog);
+        screens.put("tree", binaryTreeScreen);
 
         registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
         registrationDialog.setOnCancel(() -> setPaused(false));
@@ -119,6 +132,10 @@ public class GameApplication extends Application {
         trafficDialog = new TrafficSimulationDialog(controller);
         trafficDialog.setOnAccidentGenerated(this::handleAccidentGenerated);
         trafficDialog.setOnClose(() -> setPaused(false));
+
+        mobilityDialog = new MobilityDialog(controller, mapView);
+        mobilityDialog.setOnClose(() -> setPaused(false));
+        centerScreen.setOnOpenMobility(this::openMobilityDialog);
 
         // Interaccion directa con el mapa (demo del curso): clic en celda crea accidente o resalta incidente
         mapView.setOnCellClicked(this::handleMapCellClicked);
@@ -134,7 +151,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, mobilityDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -414,6 +431,30 @@ public class GameApplication extends Application {
         trafficDialog.open();
     }
 
+    // Abre el dialogo de consulta de movilidad y red vial.
+    public void openMobilityDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        mobilityDialog.open();
+    }
+
+    // Conmuta la visualizacion de corredores de emergencia en el mapa.
+    public void toggleEmergencyCorridors() {
+        if (!started || ended) {
+            return;
+        }
+        mapView.toggleEmergencyCorridors();
+        boolean active = mapView.isEmergencyCorridorsVisible();
+        hud.setCorridorsActive(active);
+        RetroSound.play(RetroSound.Effect.MENU);
+        toasts.show(active ? "⚡ CORREDORES DE EMERGENCIA ACTIVADOS" : "CORREDORES DESACTIVADOS (VISTA NORMAL)", null);
+        eventLog.add(active ? "Corredores de emergencia visibles." : "Corredores de emergencia ocultos.", EventLog.SYSTEM);
+        refreshAll();
+    }
+
     // Procesa el accidente detonado desde el simulador de transito.
     private void handleAccidentGenerated(Incident accident) {
         setPaused(false);
@@ -485,7 +526,7 @@ public class GameApplication extends Application {
             }
             return;
         }
-        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible())) {
+        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible()) || (mobilityDialog != null && mobilityDialog.isVisible())) {
             // los dialogos modales manejan sus propias teclas (ESC / ENTER)
             return;
         }
@@ -502,6 +543,14 @@ public class GameApplication extends Application {
         }
         if (code == KeyCode.T && !paused) {
             openTrafficSimulationDialog();
+            return;
+        }
+        if (code == KeyCode.V && !paused) {
+            openMobilityDialog();
+            return;
+        }
+        if (code == KeyCode.E && !paused) {
+            toggleEmergencyCorridors();
             return;
         }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9 && code != KeyCode.F6 && code != KeyCode.F10) {
@@ -550,6 +599,8 @@ public class GameApplication extends Application {
             showScreen("map");
         } else if (code == KeyCode.I || code == KeyCode.DIGIT3) {
             showScreen("incidents");
+        } else if (code == KeyCode.B || code == KeyCode.DIGIT4) {
+            showScreen("tree");
         }
     }
 
@@ -572,6 +623,7 @@ public class GameApplication extends Application {
 
     private void refreshAll() {
         hud.refresh(controller);
+        hud.setCorridorsActive(mapView.isEmergencyCorridorsVisible());
         if (currentScreen != null) {
             currentScreen.refresh();
         }

@@ -1,6 +1,7 @@
 package com.icesi.ui;
 
 import com.icesi.controller.GameController;
+import com.icesi.model.CityMap;
 import com.icesi.model.Incident;
 import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
@@ -12,6 +13,9 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 import java.util.function.BiConsumer;
@@ -35,6 +39,7 @@ public class CityMapView {
     private String phaseName = "";
     private AnimationTimer timer;
     private String focusedIncidentId; // incidente elegido en el panel: se resalta en el mapa
+    private boolean emergencyCorridorsVisible = false; // visualizacion de corredores de emergencia (vias prioritarias)
     private BiConsumer<Integer, Integer> onCellClicked = (r, c) -> { };
     private Consumer<String> onIncidentSelected = id -> { };
 
@@ -126,6 +131,19 @@ public class CityMapView {
         focusedIncidentId = incidentId;
     }
 
+    // Conmuta la visualizacion de los corredores de emergencia.
+    public void toggleEmergencyCorridors() {
+        emergencyCorridorsVisible = !emergencyCorridorsVisible;
+    }
+
+    public boolean isEmergencyCorridorsVisible() {
+        return emergencyCorridorsVisible;
+    }
+
+    public void setEmergencyCorridorsVisible(boolean visible) {
+        this.emergencyCorridorsVisible = visible;
+    }
+
     // Sacude el mapa cuando el movimiento no se puede hacer.
     public void shake() {
         TranslateTransition shake = new TranslateTransition(Duration.millis(40), mapFrame);
@@ -159,6 +177,10 @@ public class CityMapView {
     private void drawSprites(double time) {
         GraphicsContext gc = spriteLayer.getGraphicsContext2D();
         gc.clearRect(0, 0, spriteLayer.getWidth(), spriteLayer.getHeight());
+
+        if (emergencyCorridorsVisible) {
+            drawEmergencyCorridors(gc, time);
+        }
 
         for (Incident incident : controller.getActiveIncidentsByPriority()) {
             int[] cell = controller.getCellOf(incident);
@@ -226,6 +248,67 @@ public class CityMapView {
         gc.fillPolygon(new double[]{arrowX - 7, arrowX + 7, arrowX}, new double[]{arrowY - 1, arrowY - 1, arrowY + 8}, 3);
         gc.setFill(RetroTheme.YELLOW);
         gc.fillPolygon(new double[]{arrowX - 5, arrowX + 5, arrowX}, new double[]{arrowY, arrowY, arrowY + 6}, 3);
+
+        if (emergencyCorridorsVisible) {
+            drawCorridorBanner(gc, time);
+        }
+    }
+
+    // Dibuja el resalte visual animado de los corredores de emergencia (vias prioritarias).
+    private void drawEmergencyCorridors(GraphicsContext gc, double time) {
+        int size = controller.getCityMap().getSize();
+        boolean pulse = ((int) (time * 4) % 2 == 0);
+        Color corridorGlow = pulse ? Color.rgb(41, 173, 255, 0.42) : Color.rgb(255, 236, 39, 0.42);
+        Color centerDash = pulse ? RetroTheme.YELLOW : RetroTheme.CREAM;
+
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                if (controller.isCorridorCell(r, c)) {
+                    double x = c * CELL;
+                    double y = r * CELL;
+                    gc.setFill(corridorGlow);
+                    gc.fillRect(x, y, CELL, CELL);
+
+                    boolean hMain = (r % 16 == 8);
+                    boolean vMain = (c % 16 == 8);
+
+                    if (hMain && vMain) {
+                        gc.setStroke(RetroTheme.YELLOW);
+                        gc.setLineWidth(1.5);
+                        gc.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2);
+                    } else if (hMain) {
+                        double dashOffset = (time * 24 + c * 2) % CELL;
+                        gc.setFill(centerDash);
+                        gc.fillRect(x + dashOffset, y + CELL / 2 - 1, 3, 2);
+                    } else if (vMain) {
+                        double dashOffsetV = (time * 24 + r * 2) % CELL;
+                        gc.setFill(centerDash);
+                        gc.fillRect(x + CELL / 2 - 1, y + dashOffsetV, 2, 3);
+                    }
+                }
+            }
+        }
+    }
+
+    // Banner indicador retro en la parte superior del mapa cuando los corredores estan activos.
+    private void drawCorridorBanner(GraphicsContext gc, double time) {
+        double bannerW = 440;
+        double bannerH = 26;
+        double bannerX = (spriteLayer.getWidth() - bannerW) / 2;
+        double bannerY = 8;
+
+        gc.setFill(Color.rgb(12, 16, 32, 0.92));
+        gc.fillRect(bannerX, bannerY, bannerW, bannerH);
+        gc.setStroke(((int) (time * 3) % 2 == 0) ? RetroTheme.YELLOW : RetroTheme.BLUE);
+        gc.setLineWidth(2);
+        gc.strokeRect(bannerX, bannerY, bannerW, bannerH);
+
+        gc.setFill(RetroTheme.YELLOW);
+        gc.setFont(Font.font("Consolas", FontWeight.BOLD, 12));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("⚡ CORREDORES DE EMERGENCIA ACTIVOS [E] · RED ARTERIAL PRIORITARIA",
+                bannerX + bannerW / 2, bannerY + 17);
+        gc.setTextAlign(TextAlignment.LEFT);
     }
 
     // Esquinas amarillas que parpadean y una flecha que rebota sobre el incidente elegido.

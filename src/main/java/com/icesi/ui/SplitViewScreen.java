@@ -30,6 +30,7 @@ public class SplitViewScreen implements GameScreen {
     private Label positionLabel;
     private Label stackLabel;
     private Label timeLabel;
+    private Runnable onOpenMobility;
 
     // El mapa y el panel son los mismos de las otras pantallas, solo se acomodan juntos aqui.
     public SplitViewScreen(GameController controller, CityMapView mapView, IncidentPanelScreen incidentPanel) {
@@ -66,16 +67,38 @@ public class SplitViewScreen implements GameScreen {
         positionLabel = styled(new Label(), "operator-bar-item");
         stackLabel = styled(new Label(), "operator-bar-item");
         timeLabel = styled(new Label(), "operator-bar-item");
+
+        Button corridorButton = pixelButton("[E] CORREDORES", "button-blue");
+        corridorButton.getStyleClass().add("button-small");
+        corridorButton.setOnAction(e -> {
+            mapView.toggleEmergencyCorridors();
+            RetroSound.play(RetroSound.Effect.MENU);
+            refresh();
+        });
+
+        Button mobilityButton = pixelButton("[V] MOVILIDAD", null);
+        mobilityButton.getStyleClass().add("button-small");
+        mobilityButton.setOnAction(e -> {
+            if (onOpenMobility != null) {
+                onOpenMobility.run();
+            }
+        });
+
         Button undoButton = pixelButton("[U] DESHACER", "button-yellow");
         undoButton.getStyleClass().add("button-small");
         undoButton.setOnAction(e -> undo());
+
         Region push = new Region();
         HBox.setHgrow(push, Priority.ALWAYS);
 
-        HBox bar = new HBox(14, styled(new Label("◆"), "operator-bar-icon"), positionLabel, stackLabel, timeLabel, push, undoButton);
+        HBox bar = new HBox(10, styled(new Label("◆"), "operator-bar-icon"), positionLabel, stackLabel, timeLabel, push, corridorButton, mobilityButton, undoButton);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.getStyleClass().add("operator-bar");
         return bar;
+    }
+
+    public void setOnOpenMobility(Runnable onOpenMobility) {
+        this.onOpenMobility = onOpenMobility;
     }
 
     @Override
@@ -114,6 +137,16 @@ public class SplitViewScreen implements GameScreen {
         } else if (code == KeyCode.U) {
             undo();
             return true;
+        } else if (code == KeyCode.E) {
+            mapView.toggleEmergencyCorridors();
+            RetroSound.play(RetroSound.Effect.MENU);
+            refresh();
+            return true;
+        } else if (code == KeyCode.V) {
+            if (onOpenMobility != null) {
+                onOpenMobility.run();
+                return true;
+            }
         }
         if (direction == null) {
             return false;

@@ -1,6 +1,6 @@
 # SGMMS — Sistema de Gestión y Monitoreo de Movilidad y Seguridad (Palmira)
 
-Tarea Integradora — Algoritmos y Programación II (Entrega 2)  
+Tarea Integradora — Algoritmos y Programación II (Entrega 3 - Final)  
 **Equipo:** LaVencida
 
 ## Integrantes del Equipo
@@ -110,22 +110,81 @@ Densidad de errores-fallos = 0.0 (0/81)
 Confiabilidad = 1.0
 Completitud = 4.76 (81/17)
 ![Iteración 15](docs/screenshots/iteracion_15.png)
-## Interfaz gráfica (Entrega 3)
 
-Ejecutar con `mvn javafx:run` (o desde IntelliJ: Maven → Plugins → javafx → javafx:run).
+Iteración 16: c64d728 (Migración JavaFX, búsqueda binaria por ID y formulario de incidentes)
+Densidad de errores-fallos = 0.0 (0/144)
+Confiabilidad = 1.0
+Completitud = 1.0 (100% de casos base cubiertos)
 
-| Tecla | Acción |
-|---|---|
-| W A S D / flechas | Mover al operador |
-| U | Deshacer movimiento (pila) |
-| C / M / I | Centro de Monitoreo, Mapa con incidentes, Panel de Incidentes |
-| TAB / ENTER / R | Elegir incidente, despachar la unidad sugerida, resolver |
-| G | Generar un incidente |
-| P | Pausar |
-| F5 / F9 | Guardar / cargar partida (JSON en `data/partida`) |
-| H | Ayuda |
-| N | Sonido on / off |
+Iteración 17: 5a76419 (Simulador de accidentes por criterios de tránsito HU-08..10 e interacción en lienzo Canvas)
+Densidad de errores-fallos = 0.0 (0/154)
+Confiabilidad = 1.0
+Completitud = 1.0 (100% requisitos de colisión y criterios)
 
-**Reglas del turno:** dura 5 minutos; se pierde si hay 10 incidentes activos a la vez. Resolver en menos de 30 s da +50 puntos y un incidente ALTO sin unidad resta 25 cada 30 s. Los incidentes llegan más seguido a medida que sube el puntaje. El récord se guarda en `data/highscore.txt`.
+Iteración 18: 8aab55d (Liberación manual de vehículos HU-16, registro de flota de vehículos y persistencia binaria .dat HU-22)
+Densidad de errores-fallos = 0.0 (0/157)
+Confiabilidad = 1.0
+Completitud = 1.0 (100% de gestión de flota y persistencia)
 
-**Concurrencia:** `IncidentSpawner` (genera incidentes) y `ShiftTimer` (reloj del turno) corren en hilos propios; `GameController` usa métodos `synchronized` y la interfaz se actualiza con `Platform.runLater`.
+Iteración 19: (Pantalla visual del Árbol Binario BST y Corredores de Emergencia con Información de Movilidad)
+Densidad de errores-fallos = 0.0 (0/160)
+Confiabilidad = 1.0 (160 pruebas pasando al 100% sin errores)
+Completitud = 1.0 (100% de la rúbrica de Entrega 3 cumplida)
+
+---
+
+## Interfaz Gráfica y Pantallas (Entrega 3)
+
+Ejecutar la aplicación con:
+```bash
+mvn javafx:run
+```
+*(O desde IntelliJ IDEA: Maven → Plugins → javafx → javafx:run)*.
+
+### Pantallas del Sistema:
+1. **Pantalla de Menú Principal (`TitleScreen`)**: Portada animada de Palmira nocturna con cielo pixel-art, estrellas titilantes, panel de opciones y selector con ratón y teclado.
+2. **Centro de Monitoreo (`MonitoringCenterScreen`)**: Panel central de control con indicadores numéricos animados en tiempo real (puntaje, activos, robos, incendios, accidentes, libres), minimapa táctico de Palmira, incidente más urgente y flota de vehículos con registro (`[+] NUEVO`) y liberación (`[✕] LIBERAR`).
+3. **Panel de Incidentes (`IncidentPanelScreen`)**: Gestión operativa de incidentes con barra de búsqueda binaria $O(\log n)$ por ID, filtrado dinámico, despacho guiado con vehículo candidato propuesto según cercanía y resolución.
+4. **Escenario Dividido / Mapa de Tráfico (`SplitViewScreen`)**: Vista simultánea del mapa interactivo 64×64 y panel de incidentes, permitiendo al operador desplazarse en 4 direcciones con WASD, deshacer con pila LIFO y detonar incidentes al hacer clic sobre celdas transitables.
+5. **Pantalla del Árbol Binario (`BinaryTreeScreen`)**: Visualización gráfica del Árbol Binario de Búsqueda (`BinarySearchTree<Incident>`) que gestiona la prioridad de atención de incidentes en tiempo real. Permite alternar entre recorridos **In-Order** (mayor a menor urgencia), **Pre-Order** y **Post-Order**, inspeccionar cada nodo al hacer clic y consultar métricas de altura y equilibrio del árbol.
+6. **Corredores de Emergencia e Información de Movilidad (`MobilityDialog`)**: Visualización en tiempo real de las arterias viales principales de Palmira (`MAIN_ROAD`) con resaltado animado pulsante cian/amarillo, y diálogo de diagnóstico de fluidez vial, celdas de corredores, unidades en tránsito y tiempos de respuesta.
+7. **Pantalla de Estadísticas y Fin de Turno (`ShiftEndView`)**: Resumen final del turno de 5 minutos con conteo de incidentes resueltos, bonus por velocidad, penalizaciones y persistencia de récords de puntuación.
+
+### Tabla de Controles y Atajos de Teclado:
+
+| Tecla / Control | Acción en el Sistema | Pantalla / Componente |
+|---|---|---|
+| **W A S D / Flechas** | Mover al operador en 4 dimensiones | Mapa de Tráfico / Escenario Dividido |
+| **U** | Deshacer último movimiento del operador (Pila LIFO) | Barra del operador |
+| **C / M / I / B** | Cambiar entre Centro, Mapa, Incidentes y Árbol BST | HUD superior / Pantallas |
+| **E** | Conmutar visualización animada de Corredores de Emergencia | Mapa de Tráfico / HUD |
+| **V** | Consultar Información de Movilidad Urbana y Red Vial | Diálogo Modal de Movilidad |
+| **B** | Acceder a la Pantalla Visual del Árbol Binario (BST) | Pantalla de Árbol BST |
+| **TAB / R** | Marcar incidente siguiente / Resolver incidente | Panel de Incidentes |
+| **ENTER / ESC** | Confirmar despacho sugerido / Cancelar despacho | Diálogo de despacho |
+| **L** | Liberar vehículo en atención y cancelar despacho | Panel de Incidentes / Flota |
+| **[+] / INSERT** | Abrir formulario de registro manual de incidentes | Diálogo de registro |
+| **[+] NUEVO** | Registrar nuevo vehículo en la flota disponible | Centro de Monitoreo |
+| **T / Clic en Mapa** | Abrir simulador de accidentes (criterios RF-4 / HU-08..10) | Diálogo de tránsito / Lienzo |
+| **G** | Generar incidente aleatorio inmediato | Centro de Monitoreo |
+| **P** | Pausar / reanudar simulación | Global |
+| **F5 / F9** | Guardar / cargar partida en formato JSON (`data/partida`) | Global |
+| **F6 / F10** | Guardar / cargar partida binaria serializable (`data/partida.dat`) | Global |
+| **H** | Desplegar ventana de ayuda y reglas del turno | Global |
+| **N** | Activar / desactivar audio retro procedimental de 8 bits | Global |
+
+---
+
+## Documentación y Patrones de Diseño
+
+- **Diagrama de Clases UML y Patrones de Diseño**: Documento completo con diagrama Mermaid y catálogo de patrones (MVC, Observer, Strategy, Active Object, Composite): [docs/diagrama_clases_uml.md](docs/diagrama_clases_uml.md).
+- **Historias de Usuario**: [docs/historias_de_usuario.md](docs/historias_de_usuario.md).
+- **Diseño de Pruebas Unitarias TDD**: Diseños de prueba detallados en [docs/](docs/).
+
+---
+
+## Concurrencia y Sincronización
+- **`IncidentSpawner`**: Hilo generador continuo de incidentes que se acelera progresivamente conforme aumenta el puntaje del operador.
+- **`ShiftTimer`**: Hilo del reloj de turno (cuenta regresiva de 5 minutos) que evalúa penalizaciones de espera cada 30 segundos.
+- **Sincronización Thread-Safe**: Todos los accesos mutables a listas enlazadas, árbol BST y flota en `GameController` utilizan métodos `synchronized`.
+- **Renderizado UI**: Las actualizaciones de la interfaz gráfica provenientes de hilos secundarios se delegan de forma segura al JavaFX Application Thread mediante `Platform.runLater()`.
