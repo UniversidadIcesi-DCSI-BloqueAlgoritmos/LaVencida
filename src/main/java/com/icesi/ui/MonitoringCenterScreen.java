@@ -44,6 +44,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private MiniMap miniMap;
     private Runnable onOpenRegistration;
     private Runnable onOpenSimulation;
+    private Runnable onOpenVehicleRegistration;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -119,9 +120,10 @@ public class MonitoringCenterScreen implements GameScreen {
         String[][] controls = {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
-                {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"C  M  I", "CAMBIAR DE PANTALLA"},
-                {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
-                {"N", "SONIDO ON / OFF"}, {"F5 / F9", "GUARDAR / CARGAR"}
+                {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"L", "LIBERAR UNIDAD / CANCELAR"},
+                {"C  M  I", "CAMBIAR DE PANTALLA"}, {"P", "PAUSAR SIMULACION"},
+                {"ENTER / ESC", "DESPACHAR / CANCELAR"}, {"N", "SONIDO ON / OFF"},
+                {"F5 / F9", "GUARDAR / CARGAR JSON"}, {"F6 / F10", "GUARDAR / CARGAR .DAT"}
         };
         for (int i = 0; i < controls.length; i++) {
             Label key = styled(new Label(controls[i][0]), "hud-key-active");
@@ -148,7 +150,18 @@ public class MonitoringCenterScreen implements GameScreen {
         priorityPanel.getStyleClass().add("pixel-panel");
 
         fleetBox = new VBox(2);
-        VBox fleetPanel = new VBox(10, styled(new Label("■ FLOTA"), "panel-title"), fleetBox);
+        Region pushFleet = new Region();
+        HBox.setHgrow(pushFleet, Priority.ALWAYS);
+        Button addVehicleBtn = pixelButton("[+] NUEVO", "button-blue");
+        addVehicleBtn.getStyleClass().add("button-small");
+        addVehicleBtn.setOnAction(e -> {
+            if (onOpenVehicleRegistration != null) {
+                onOpenVehicleRegistration.run();
+            }
+        });
+        HBox fleetHeader = new HBox(8, styled(new Label("■ FLOTA"), "panel-title"), pushFleet, addVehicleBtn);
+        fleetHeader.setAlignment(Pos.CENTER_LEFT);
+        VBox fleetPanel = new VBox(10, fleetHeader, fleetBox);
         fleetPanel.getStyleClass().add("pixel-panel");
 
         // mini-mapa con la leyenda de colores abajo
@@ -181,6 +194,10 @@ public class MonitoringCenterScreen implements GameScreen {
 
     public void setOnOpenSimulation(Runnable onOpenSimulation) {
         this.onOpenSimulation = onOpenSimulation;
+    }
+
+    public void setOnOpenVehicleRegistration(Runnable onOpenVehicleRegistration) {
+        this.onOpenVehicleRegistration = onOpenVehicleRegistration;
     }
 
     @Override

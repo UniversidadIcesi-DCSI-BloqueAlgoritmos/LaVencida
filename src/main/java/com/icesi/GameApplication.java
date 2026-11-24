@@ -14,12 +14,14 @@ import com.icesi.ui.MonitoringCenterScreen;
 import com.icesi.ui.PixelCursor;
 import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
+import com.icesi.model.Vehicle;
 import com.icesi.ui.RetroSound;
 import com.icesi.ui.RetroTheme;
 import com.icesi.ui.HelpView;
 import com.icesi.ui.IncidentRegistrationDialog;
 import com.icesi.ui.OptionsView;
 import com.icesi.ui.TrafficSimulationDialog;
+import com.icesi.ui.VehicleRegistrationDialog;
 import com.icesi.ui.PauseView;
 import com.icesi.ui.ShiftEndView;
 import com.icesi.ui.SplitViewScreen;
@@ -69,9 +71,11 @@ public class GameApplication extends Application {
     private HelpView helpView = new HelpView();
     private OptionsView optionsView = new OptionsView();
     private IncidentRegistrationDialog registrationDialog = new IncidentRegistrationDialog();
+    private VehicleRegistrationDialog vehicleDialog;
     private TrafficSimulationDialog trafficDialog;
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
+    private static final String BINARY_SAVE_FILE = "data/partida.dat";
     private HighScoreStore highScores = new HighScoreStore("data/highscore.txt");
     private boolean ended;
     private Stage stage;
@@ -107,6 +111,11 @@ public class GameApplication extends Application {
         registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
         registrationDialog.setOnCancel(() -> setPaused(false));
 
+        vehicleDialog = new VehicleRegistrationDialog();
+        centerScreen.setOnOpenVehicleRegistration(this::openVehicleRegistrationDialog);
+        vehicleDialog.setOnVehicleRegistered(this::handleVehicleRegistration);
+        vehicleDialog.setOnCancel(() -> setPaused(false));
+
         trafficDialog = new TrafficSimulationDialog(controller);
         trafficDialog.setOnAccidentGenerated(this::handleAccidentGenerated);
         trafficDialog.setOnClose(() -> setPaused(false));
@@ -125,7 +134,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, registrationDialog, trafficDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -321,6 +330,54 @@ public class GameApplication extends Application {
         }
     }
 
+    // F6: guarda el estado en archivo binario serializable (.dat).
+    private void saveGameBinary() {
+        try {
+            controller.saveGameBinary(BINARY_SAVE_FILE);
+            RetroSound.play(RetroSound.Effect.RESOLVE);
+            toasts.show("PARTIDA SERIALIZADA (.dat)  [F10] para cargarla", null);
+            eventLog.add("Estado serializado en " + BINARY_SAVE_FILE, EventLog.SYSTEM);
+        } catch (RuntimeException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            toasts.show("No se pudo serializar: " + e.getMessage(), null);
+        }
+    }
+
+    // F10: carga el estado desde archivo binario serializable (.dat).
+    private void loadGameBinary() {
+        try {
+            controller.loadGameBinary(BINARY_SAVE_FILE);
+            RetroSound.play(RetroSound.Effect.START);
+            toasts.show("PARTIDA BINARIA CARGADA (.dat)", null);
+            eventLog.add("Estado binario cargado desde " + BINARY_SAVE_FILE, EventLog.SYSTEM);
+            refreshAll();
+        } catch (RuntimeException e) {
+            RetroSound.play(RetroSound.Effect.ERROR);
+            toasts.show("No hay partida binaria para cargar (usa F6 primero).", null);
+        }
+    }
+
+    // Abre el formulario de registro de nuevos vehiculos.
+    public void openVehicleRegistrationDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        vehicleDialog.open();
+    }
+
+    // Procesa el nuevo vehiculo registrado.
+    private void handleVehicleRegistration(Vehicle vehicle) {
+        controller.registerVehicle(vehicle);
+        setPaused(false);
+        RetroSound.play(RetroSound.Effect.ALERT);
+        toasts.show("¡NUEVA UNIDAD REGISTRADA! " + vehicle.getId() + " (" + Texts.of(vehicle.getType()) + ")",
+                SpriteRegistry.forVehicle(vehicle.getType()));
+        eventLog.add("Vehiculo " + vehicle.getId() + " agregado a la flota.", EventLog.SYSTEM);
+        refreshAll();
+    }
+
     // Empieza una partida nueva desde la pantalla de titulo, en la misma ventana.
     private void restart() {
         refresher.stop();
@@ -428,7 +485,7 @@ public class GameApplication extends Application {
             }
             return;
         }
-        if (registrationDialog.isVisible() || (trafficDialog != null && trafficDialog.isVisible())) {
+        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible())) {
             // los dialogos modales manejan sus propias teclas (ESC / ENTER)
             return;
         }
@@ -447,7 +504,7 @@ public class GameApplication extends Application {
             openTrafficSimulationDialog();
             return;
         }
-        if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9) {
+        if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9 && code != KeyCode.F6 && code != KeyCode.F10) {
             return;
         }
         if (currentScreen != null && currentScreen.handleKey(code)) {
@@ -460,6 +517,14 @@ public class GameApplication extends Application {
         }
         if (code == KeyCode.F9) {
             loadGame();
+            return;
+        }
+        if (code == KeyCode.F6) {
+            saveGameBinary();
+            return;
+        }
+        if (code == KeyCode.F10) {
+            loadGameBinary();
             return;
         }
         if (code == KeyCode.N) {
