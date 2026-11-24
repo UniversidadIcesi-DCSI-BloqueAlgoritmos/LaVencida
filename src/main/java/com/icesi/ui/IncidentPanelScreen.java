@@ -83,6 +83,7 @@ public class IncidentPanelScreen implements GameScreen {
     private TextField searchInput;
     private Label searchFeedback;
     private Runnable onOpenRegistration;
+    private Consumer<String> navigator;
 
     // avisa a quien le interese (el mapa) cual incidente se eligio; null si ninguno
     private Consumer<String> onFocus = id -> { };
@@ -124,13 +125,21 @@ public class IncidentPanelScreen implements GameScreen {
             }
         });
 
+        Button bstBtn = pixelButton("[B] VER BST", "button-yellow");
+        bstBtn.getStyleClass().add("button-small");
+        bstBtn.setOnAction(e -> {
+            if (navigator != null) {
+                navigator.accept("tree");
+            }
+        });
+
         Button clearBtn = pixelButton("LIMPIAR", "button-gray");
         clearBtn.getStyleClass().add("button-small");
         clearBtn.setOnAction(e -> clearSearch());
 
         searchInput.setOnAction(e -> executeBinarySearch());
 
-        HBox searchRow = new HBox(8, searchInput, searchBtn, registerBtn, clearBtn);
+        HBox searchRow = new HBox(8, searchInput, searchBtn, registerBtn, bstBtn, clearBtn);
         searchRow.setAlignment(Pos.CENTER_LEFT);
 
         searchFeedback = styled(new Label(), "search-feedback-found");
@@ -182,6 +191,10 @@ public class IncidentPanelScreen implements GameScreen {
     // Configura la accion para abrir el formulario de registro manual.
     public void setOnOpenRegistration(Runnable onOpenRegistration) {
         this.onOpenRegistration = onOpenRegistration;
+    }
+
+    public void setNavigator(Consumer<String> navigator) {
+        this.navigator = navigator;
     }
 
     // RF3 / HU-06: Ejecuta la busqueda binaria por ID en el modelo y resalta el incidente.
@@ -329,6 +342,12 @@ public class IncidentPanelScreen implements GameScreen {
         if (code == KeyCode.TAB) {
             focusNext();
             return true;
+        }
+        if (code == KeyCode.B) {
+            if (navigator != null) {
+                navigator.accept("tree");
+                return true;
+            }
         }
         Incident focused = findActive(focusedId);
         if (code == KeyCode.ENTER && focused != null && focused.getStatus() == IncidentStatus.PENDING) {

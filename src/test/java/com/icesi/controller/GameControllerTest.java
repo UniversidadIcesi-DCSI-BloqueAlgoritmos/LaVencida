@@ -11,6 +11,8 @@ import com.icesi.model.Severity;
 import com.icesi.model.Vehicle;
 import com.icesi.model.VehicleStatus;
 import com.icesi.model.VehicleType;
+import com.icesi.structures.BinarySearchTree;
+import com.icesi.structures.LinkedList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -293,5 +295,70 @@ class GameControllerTest {
         // Assert
         assertEquals(1, restoredController.getActiveIncidentCount());
         assertNotNull(restoredController.findIncidentById(inc.getId()));
+    }
+
+    // BST de incidentes - Caso 18: getActiveIncidentsTree retorna el arbol binario de busqueda con altura y tamano consistentes.
+    @Test
+    void getActiveIncidentsTreeReturnsValidBST() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        BinarySearchTree<Incident> treeBefore = controller.getActiveIncidentsTree();
+        assertNotNull(treeBefore);
+        assertEquals(0, treeBefore.size());
+
+        // Act
+        Incident inc1 = new Incident("INC-A", IncidentType.THEFT, "Calle 10", Severity.LOW);
+        Incident inc2 = new Incident("INC-B", IncidentType.FIRE, "Calle 12", Severity.HIGH);
+        controller.registerIncident(inc1);
+        controller.registerIncident(inc2);
+
+        // Assert
+        BinarySearchTree<Incident> treeAfter = controller.getActiveIncidentsTree();
+        assertEquals(2, treeAfter.size());
+        assertTrue(treeAfter.height() >= 1);
+        assertNotNull(treeAfter.getRoot());
+        assertTrue(treeAfter.contains(inc1));
+        assertTrue(treeAfter.contains(inc2));
+    }
+
+    // Corredores de emergencia - Caso 19: isCorridorCell identifica correctamente vias MAIN_ROAD y countCorridorCells es consistente.
+    @Test
+    void isCorridorCellAndCountCorridorCellsAccuratelyDetectMainRoads() {
+        // Arrange
+        GameController controller = createController(8, 8);
+
+        // Assert: Segun CityMap, fila 8 o columna 8 son MAIN_ROAD
+        assertTrue(controller.isCorridorCell(8, 4));
+        assertTrue(controller.isCorridorCell(4, 8));
+        assertTrue(controller.isCorridorCell(8, 8)); // Cruce arterial
+        assertFalse(controller.isCorridorCell(0, 0)); // Borde / Obstaculo
+        assertFalse(controller.isCorridorCell(99, 99)); // Fuera de limites
+
+        int totalCorridorCells = controller.countCorridorCells();
+        assertTrue(totalCorridorCells > 0, "Debe haber celdas asignadas a corredores arteriales");
+    }
+
+    // Recorrido BST - Caso 20: El recorrido in-order del arbol organiza los incidentes por prioridad.
+    @Test
+    void bstInOrderTraversalMaintainsPrioritySequence() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident lowInc = new Incident("LOW-01", IncidentType.THEFT, "Zona A", Severity.LOW);
+        Incident medInc = new Incident("MED-01", IncidentType.ACCIDENT, "Zona B", Severity.MEDIUM);
+        Incident highInc = new Incident("HIGH-01", IncidentType.FIRE, "Zona C", Severity.HIGH);
+
+        controller.registerIncident(lowInc);
+        controller.registerIncident(medInc);
+        controller.registerIncident(highInc);
+
+        // Act
+        LinkedList<Incident> inOrder = controller.getActiveIncidentsTree().inOrder();
+
+        // Assert
+        assertEquals(3, inOrder.size());
+        // En in-order segun IncidentPriorityComparator (mayor a menor urgencia): HIGH -> MEDIUM -> LOW
+        assertEquals(Severity.HIGH, inOrder.get(0).getSeverity());
+        assertEquals(Severity.MEDIUM, inOrder.get(1).getSeverity());
+        assertEquals(Severity.LOW, inOrder.get(2).getSeverity());
     }
 }

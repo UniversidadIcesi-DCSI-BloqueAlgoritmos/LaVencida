@@ -45,6 +45,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private Runnable onOpenRegistration;
     private Runnable onOpenSimulation;
     private Runnable onOpenVehicleRegistration;
+    private Runnable onOpenMobility;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -111,7 +112,15 @@ public class MonitoringCenterScreen implements GameScreen {
                 onOpenSimulation.run();
             }
         });
-        HBox buttons = new HBox(10, mapButton, incidentsButton, spawnButton, registerButton, simButton);
+        Button treeButton = pixelButton("[B] ARBOL BST", "button-yellow");
+        treeButton.setOnAction(e -> navigator.accept("tree"));
+        Button mobilityBtn = pixelButton("[V] MOVILIDAD", "button-blue");
+        mobilityBtn.setOnAction(e -> {
+            if (onOpenMobility != null) {
+                onOpenMobility.run();
+            }
+        });
+        HBox buttons = new HBox(8, mapButton, incidentsButton, treeButton, spawnButton, registerButton, simButton, mobilityBtn);
 
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
@@ -121,8 +130,9 @@ public class MonitoringCenterScreen implements GameScreen {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
                 {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"L", "LIBERAR UNIDAD / CANCELAR"},
-                {"C  M  I", "CAMBIAR DE PANTALLA"}, {"P", "PAUSAR SIMULACION"},
-                {"ENTER / ESC", "DESPACHAR / CANCELAR"}, {"N", "SONIDO ON / OFF"},
+                {"C  M  I  B", "CAMBIAR DE PANTALLA"}, {"E / V", "CORREDORES Y MOVILIDAD"},
+                {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
+                {"N", "SONIDO ON / OFF"},
                 {"F5 / F9", "GUARDAR / CARGAR JSON"}, {"F6 / F10", "GUARDAR / CARGAR .DAT"}
         };
         for (int i = 0; i < controls.length; i++) {
@@ -200,6 +210,10 @@ public class MonitoringCenterScreen implements GameScreen {
         this.onOpenVehicleRegistration = onOpenVehicleRegistration;
     }
 
+    public void setOnOpenMobility(Runnable onOpenMobility) {
+        this.onOpenMobility = onOpenMobility;
+    }
+
     @Override
     public void refresh() {
         scoreValue.setValue(controller.getScore());
@@ -253,6 +267,16 @@ public class MonitoringCenterScreen implements GameScreen {
         if (code == KeyCode.G) {
             spawnIncident();
             return true;
+        }
+        if (code == KeyCode.B) {
+            navigator.accept("tree");
+            return true;
+        }
+        if (code == KeyCode.V) {
+            if (onOpenMobility != null) {
+                onOpenMobility.run();
+                return true;
+            }
         }
         return false;
     }

@@ -19,6 +19,8 @@ public class HudBar extends HBox {
     private Label centerKey;
     private Label mapKey;
     private Label incidentsKey;
+    private Label treeKey;
+    private Label corridorKey;
 
     // Arma la barra con sus etiquetas.
     public HudBar() {
@@ -39,11 +41,14 @@ public class HudBar extends HBox {
         centerKey = new Label("[C] CENTRO");
         mapKey = new Label("[M] MAPA");
         incidentsKey = new Label("[I] INCIDENTES");
+        treeKey = new Label("[B] ARBOL BST");
+        corridorKey = new Label("[E] VIAS");
         Label helpKey = new Label("[H] AYUDA");
         helpKey.getStyleClass().add("hud-key");
 
         getChildren().addAll(PixelFont.createLabel("SGMMS", 3, RetroTheme.YELLOW, RetroTheme.PURPLE),
-                scoreLabel, activeLabel, freeLabel, timerLabel, alertMeter, spacer, soundLabel, centerKey, mapKey, incidentsKey, helpKey);
+                scoreLabel, activeLabel, freeLabel, timerLabel, alertMeter, spacer, soundLabel,
+                centerKey, mapKey, incidentsKey, treeKey, corridorKey, helpKey);
         setActiveScreen("center");
 
         // ningun texto del HUD se puede encoger: si falta espacio se achica el hueco del medio
@@ -86,6 +91,12 @@ public class HudBar extends HBox {
         markKey(centerKey, screen.equals("center"));
         markKey(mapKey, screen.equals("map"));
         markKey(incidentsKey, screen.equals("incidents"));
+        markKey(treeKey, screen.equals("tree"));
+    }
+
+    // Resalta la tecla de corredores de emergencia cuando estan visibles en el mapa.
+    public void setCorridorsActive(boolean active) {
+        markKey(corridorKey, active);
     }
 
     private void markKey(Label key, boolean active) {
