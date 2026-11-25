@@ -46,6 +46,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private Runnable onOpenSimulation;
     private Runnable onOpenVehicleRegistration;
     private Runnable onOpenMobility;
+    private Runnable onOpenStatistics;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -120,7 +121,13 @@ public class MonitoringCenterScreen implements GameScreen {
                 onOpenMobility.run();
             }
         });
-        HBox buttons = new HBox(8, mapButton, incidentsButton, treeButton, spawnButton, registerButton, simButton, mobilityBtn);
+        Button statsBtn = pixelButton("[K] STATS", "button-green");
+        statsBtn.setOnAction(e -> {
+            if (onOpenStatistics != null) {
+                onOpenStatistics.run();
+            }
+        });
+        HBox buttons = new HBox(8, mapButton, incidentsButton, treeButton, spawnButton, registerButton, simButton, mobilityBtn, statsBtn);
 
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
@@ -130,7 +137,7 @@ public class MonitoringCenterScreen implements GameScreen {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
                 {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"L", "LIBERAR UNIDAD / CANCELAR"},
-                {"C  M  I  B", "CAMBIAR DE PANTALLA"}, {"E / V", "CORREDORES Y MOVILIDAD"},
+                {"C  M  I  B", "CAMBIAR DE PANTALLA"}, {"E / V / K", "CORREDORES, MOVILIDAD, STATS"},
                 {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
                 {"N", "SONIDO ON / OFF"},
                 {"F5 / F9", "GUARDAR / CARGAR JSON"}, {"F6 / F10", "GUARDAR / CARGAR .DAT"}
@@ -212,6 +219,10 @@ public class MonitoringCenterScreen implements GameScreen {
 
     public void setOnOpenMobility(Runnable onOpenMobility) {
         this.onOpenMobility = onOpenMobility;
+    }
+
+    public void setOnOpenStatistics(Runnable onOpenStatistics) {
+        this.onOpenStatistics = onOpenStatistics;
     }
 
     @Override

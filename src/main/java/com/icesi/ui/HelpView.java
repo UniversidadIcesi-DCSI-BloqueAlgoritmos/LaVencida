@@ -28,7 +28,7 @@ public class HelpView extends StackPane {
         keys.setVgap(4);
         String[][] controls = {
                 {"W A S D / FLECHAS", "Mover al operador"}, {"U", "Deshacer movimiento"},
-                {"C  M  I  B", "Centro, Mapa, Incidentes, Arbol BST"}, {"E / V", "Corredores de emergencia / Movilidad"},
+                {"C  M  I  B", "Centro, Mapa, Incidentes, Arbol BST"}, {"E / V / K", "Corredores, Movilidad, Estadisticas"},
                 {"ENTER / ESC", "Despachar la sugerida / cancelar"}, {"TAB / R", "Elegir incidente / resolver"},
                 {"L", "Liberar unidad / cancelar despacho"}, {"G", "Generar un incidente"},
                 {"[+] / INSERT", "Registrar incidente manual"}, {"T / CLIC MAPA", "Simular accidentes (RF-4)"},

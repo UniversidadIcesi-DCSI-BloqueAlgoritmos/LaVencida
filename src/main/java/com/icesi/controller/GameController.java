@@ -366,6 +366,14 @@ public class GameController {
         return manager.getActiveIncidentCount();
     }
 
+    public synchronized int getResolvedIncidentCount() {
+        return manager.getResolvedIncidentCount();
+    }
+
+    public synchronized int getTotalIncidentCount() {
+        return manager.getTotalIncidentCount();
+    }
+
     public synchronized int getActiveAccidentCount() {
         return manager.getActiveAccidentCount();
     }

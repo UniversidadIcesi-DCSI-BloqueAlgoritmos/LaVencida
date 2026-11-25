@@ -13,6 +13,7 @@ import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MobilityDialog;
 import com.icesi.ui.MonitoringCenterScreen;
+import com.icesi.ui.StatisticsDialog;
 import com.icesi.ui.PixelCursor;
 import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
@@ -76,6 +77,7 @@ public class GameApplication extends Application {
     private VehicleRegistrationDialog vehicleDialog;
     private TrafficSimulationDialog trafficDialog;
     private MobilityDialog mobilityDialog;
+    private StatisticsDialog statisticsDialog;
     private BinaryTreeScreen binaryTreeScreen;
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
@@ -137,6 +139,10 @@ public class GameApplication extends Application {
         mobilityDialog.setOnClose(() -> setPaused(false));
         centerScreen.setOnOpenMobility(this::openMobilityDialog);
 
+        statisticsDialog = new StatisticsDialog(controller, highScores);
+        statisticsDialog.setOnClose(() -> setPaused(false));
+        centerScreen.setOnOpenStatistics(this::openStatisticsDialog);
+
         // Interaccion directa con el mapa (demo del curso): clic en celda crea accidente o resalta incidente
         mapView.setOnCellClicked(this::handleMapCellClicked);
         mapView.setOnIncidentSelected(incidentId -> {
@@ -151,7 +157,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, mobilityDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, mobilityDialog, statisticsDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -441,6 +447,16 @@ public class GameApplication extends Application {
         mobilityDialog.open();
     }
 
+    // Abre la pantalla de estadisticas en tiempo real.
+    public void openStatisticsDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        statisticsDialog.open();
+    }
+
     // Conmuta la visualizacion de corredores de emergencia en el mapa.
     public void toggleEmergencyCorridors() {
         if (!started || ended) {
@@ -526,7 +542,7 @@ public class GameApplication extends Application {
             }
             return;
         }
-        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible()) || (mobilityDialog != null && mobilityDialog.isVisible())) {
+        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible()) || (mobilityDialog != null && mobilityDialog.isVisible()) || (statisticsDialog != null && statisticsDialog.isVisible())) {
             // los dialogos modales manejan sus propias teclas (ESC / ENTER)
             return;
         }
@@ -551,6 +567,10 @@ public class GameApplication extends Application {
         }
         if (code == KeyCode.E && !paused) {
             toggleEmergencyCorridors();
+            return;
+        }
+        if (code == KeyCode.K && !paused) {
+            openStatisticsDialog();
             return;
         }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9 && code != KeyCode.F6 && code != KeyCode.F10) {

@@ -284,6 +284,22 @@ public class IncidentManager implements Serializable {
         return count;
     }
 
+    // Retorna la cantidad total de incidentes resueltos (RESOLVED).
+    public int getResolvedIncidentCount() {
+        int count = 0;
+        for (Incident current : incidents) {
+            if (current.getStatus() == IncidentStatus.RESOLVED) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Retorna la cantidad total de incidentes registrados.
+    public int getTotalIncidentCount() {
+        return incidents.size();
+    }
+
     // RF13: Retorna la cantidad de accidentes activos.
     public int getActiveAccidentCount() {
         return countActiveByType(IncidentType.ACCIDENT);
