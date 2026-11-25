@@ -83,6 +83,7 @@ public class IncidentPanelScreen implements GameScreen {
     private TextField searchInput;
     private Label searchFeedback;
     private Runnable onOpenRegistration;
+    private Consumer<Incident> onOpenEdit;
     private Consumer<String> navigator;
 
     // avisa a quien le interese (el mapa) cual incidente se eligio; null si ninguno
@@ -139,14 +140,18 @@ public class IncidentPanelScreen implements GameScreen {
 
         searchInput.setOnAction(e -> executeBinarySearch());
 
-        HBox searchRow = new HBox(8, searchInput, searchBtn, registerBtn, bstBtn, clearBtn);
+        HBox searchRow = new HBox(8, searchInput, searchBtn, clearBtn);
         searchRow.setAlignment(Pos.CENTER_LEFT);
+
+        FlowPane quickActions = new FlowPane(8, 6, registerBtn, bstBtn);
+        quickActions.setAlignment(Pos.CENTER_LEFT);
 
         searchFeedback = styled(new Label(), "search-feedback-found");
         searchFeedback.setVisible(false);
         searchFeedback.setManaged(false);
+        searchFeedback.setWrapText(true);
 
-        VBox searchSection = new VBox(6, searchRow, searchFeedback);
+        VBox searchSection = new VBox(6, searchRow, quickActions, searchFeedback);
         searchSection.getStyleClass().add("search-bar");
 
         left = new VBox(14, fullTitle, subtitle, searchSection, scroll);
@@ -191,6 +196,11 @@ public class IncidentPanelScreen implements GameScreen {
     // Configura la accion para abrir el formulario de registro manual.
     public void setOnOpenRegistration(Runnable onOpenRegistration) {
         this.onOpenRegistration = onOpenRegistration;
+    }
+
+    // Configura la accion para abrir el formulario en modo actualizacion/edicion.
+    public void setOnOpenEdit(Consumer<Incident> onOpenEdit) {
+        this.onOpenEdit = onOpenEdit;
     }
 
     public void setNavigator(Consumer<String> navigator) {
@@ -455,7 +465,19 @@ public class IncidentPanelScreen implements GameScreen {
             action.setOnAction(e -> openDispatch(incident));
             action.setMinWidth(Region.USE_PREF_SIZE);
             actionButtons.put(incident.getId(), action);
-            actionNode = action;
+
+            Button editBtn = pixelButton("✎ EDITAR", "button-yellow");
+            editBtn.getStyleClass().add("button-small");
+            editBtn.setOnAction(e -> {
+                if (onOpenEdit != null) {
+                    onOpenEdit.accept(incident);
+                }
+            });
+            editBtn.setMinWidth(Region.USE_PREF_SIZE);
+
+            HBox actionsBox = new HBox(6, action, editBtn);
+            actionsBox.setAlignment(Pos.CENTER_RIGHT);
+            actionNode = actionsBox;
         } else {
             Button action;
             if (!arrived(incident)) {
@@ -612,7 +634,7 @@ public class IncidentPanelScreen implements GameScreen {
             int points = controller.resolveIncident(incident.getId(), LocalDateTime.now());
             boolean fast = controller.wasLastResolveFast();
             focus(null);
-            Node card = source.getParent();
+            Node card = cards.getOrDefault(incident.getId(), source.getParent());
             source.setDisable(true);
             TranslateTransition move = new TranslateTransition(Duration.millis(320), card);
             move.setToX(500);
@@ -696,7 +718,12 @@ public class IncidentPanelScreen implements GameScreen {
     private String buildSignature() {
         StringBuilder text = new StringBuilder();
         for (Incident incident : controller.getActiveIncidentsByPriority()) {
-            text.append(incident.getId()).append(incident.getStatus()).append(arrived(incident)).append(';');
+            text.append(incident.getId()).append('|')
+                    .append(incident.getType()).append('|')
+                    .append(incident.getSeverity()).append('|')
+                    .append(incident.getLocation()).append('|')
+                    .append(incident.getStatus()).append('|')
+                    .append(arrived(incident)).append(';');
         }
         for (Vehicle vehicle : controller.getVehicles()) {
             text.append(vehicle.getStatus().ordinal());

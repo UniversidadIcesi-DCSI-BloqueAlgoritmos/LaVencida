@@ -264,6 +264,7 @@ classDiagram
         +applyWaitPenalties(now: LocalDateTime) int
         +wasLastResolveFast() boolean
         +registerIncident(incident: Incident) void
+        +updateIncident(id: String, type: IncidentType, severity: Severity, location: String, description: String) void
         +registerVehicle(vehicle: Vehicle) void
         +findIncidentById(incidentId: String) Incident
         +findVehicleById(vehicleId: String) Vehicle
@@ -405,6 +406,7 @@ classDiagram
         -incidents: LinkedList~Incident~
         -activeIncidentsTree: BinarySearchTree~Incident~
         +registerIncident(incident: Incident) void
+        +updateIncident(id: String, type: IncidentType, severity: Severity, location: String, description: String) void
         +getIncidentCount() int
         +getIncidentAt(index: int) Incident
         +findIncidentById(id: String) Incident

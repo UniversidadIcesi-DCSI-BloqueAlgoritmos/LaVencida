@@ -48,3 +48,5 @@
 | Crear controller con mapa 64×64. | controller.isCorridorCell(8, 4); controller.countCorridorCells(); | assertTrue(isCorridorCell(8, 4)); assertFalse(isCorridorCell(0, 0)); assertTrue(countCorridorCells() > 0); |
 | **Caso 20: Recorrido inOrder del BST organiza los incidentes de mayor a menor urgencia.** | | |
 | Registrar incidentes LOW, MEDIUM y HIGH. | LinkedList<Incident> inOrder = controller.getActiveIncidentsTree().inOrder(); | assertEquals(Severity.HIGH, inOrder.get(0).getSeverity()); assertEquals(Severity.LOW, inOrder.get(2).getSeverity()); |
+| **Caso 21: Actualización de incidente modifica sus datos y lo reordena dentro del BST.** | | |
+| Registrar "INC-1" (MEDIUM) e "INC-2" (LOW). | controller.updateIncident("INC-2", ACCIDENT, HIGH, "Calle 30", "Choque"); | assertEquals(HIGH, updated.getSeverity()); assertEquals(2, tree.size()); assertEquals("INC-2", highest.getId()); |

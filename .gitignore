@@ -39,3 +39,6 @@ build/
 .DS_Store
 ### Partidas y record guardados por el juego ###
 data/
+
+### Respaldos automaticos de Visual Paradigm ###
+*.vpp.bak_*

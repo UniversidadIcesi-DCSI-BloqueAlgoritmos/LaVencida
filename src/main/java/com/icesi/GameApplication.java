@@ -106,6 +106,7 @@ public class GameApplication extends Application {
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         incidentPanel.setOnOpenRegistration(this::openRegistrationDialog);
+        incidentPanel.setOnOpenEdit(this::openEditDialog);
         incidentPanel.setNavigator(this::showScreen);
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
@@ -124,6 +125,7 @@ public class GameApplication extends Application {
         screens.put("tree", binaryTreeScreen);
 
         registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
+        registrationDialog.setOnUpdate(this::handleManualIncidentUpdate);
         registrationDialog.setOnCancel(() -> setPaused(false));
 
         vehicleDialog = new VehicleRegistrationDialog();
@@ -145,9 +147,35 @@ public class GameApplication extends Application {
 
         // Interaccion directa con el mapa (demo del curso): clic en celda crea accidente o resalta incidente
         mapView.setOnCellClicked(this::handleMapCellClicked);
+        mapView.setOnObstacleClicked((r, c) -> toasts.show("✕ Obstáculo en (" + r + ", " + c + "): vía bloqueada.", null));
         mapView.setOnIncidentSelected(incidentId -> {
             incidentPanel.handleKey(KeyCode.TAB);
         });
+
+        hud.setOnNavigate(screen -> {
+            if (started && !ended && !paused) {
+                RetroSound.play(RetroSound.Effect.MENU);
+                showScreen(screen);
+            }
+        });
+        hud.setOnToggleCorridors(() -> {
+            if (started && !ended && !paused) {
+                toggleEmergencyCorridors();
+            }
+        });
+        hud.setOnOpenStats(() -> {
+            if (started && !ended && !paused) {
+                openStatisticsDialog();
+            }
+        });
+        hud.setOnOpenHelp(() -> {
+            if (started && !ended && !paused) {
+                setPaused(true);
+                helpView.setVisible(true);
+                RetroSound.play(RetroSound.Effect.MENU);
+            }
+        });
+        hud.setOnToggleSound(() -> handleKey(KeyCode.N));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -427,6 +455,28 @@ public class GameApplication extends Application {
         announceIncident(incident);
     }
 
+    // Abre el formulario para actualizar tipo, gravedad, ubicacion o descripcion de un incidente activo.
+    public void openEditDialog(Incident incident) {
+        if (!started || ended || incident == null) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        registrationDialog.openForEdit(incident);
+    }
+
+    // Aplica la actualizacion del incidente y reordena el arbol binario BST.
+    private void handleManualIncidentUpdate(Incident updated) {
+        controller.updateIncident(updated.getId(), updated.getType(), updated.getSeverity(),
+                updated.getLocation(), updated.getDescription());
+        setPaused(false);
+        RetroSound.play(RetroSound.Effect.START);
+        toasts.show("✎ INCIDENTE ACTUALIZADO: " + updated.getId() + " (" + Texts.of(updated.getSeverity()) + ")",
+                SpriteRegistry.forIncident(updated.getType()));
+        eventLog.add("Incidente " + updated.getId() + " actualizado (" + Texts.of(updated.getSeverity()) + ").", EventLog.SYSTEM);
+        refreshAll();
+    }
+
     // Abre el simulador de accidentes bajo criterios operativos de transito (RF-4).
     public void openTrafficSimulationDialog() {
         if (!started || ended) {
@@ -477,16 +527,26 @@ public class GameApplication extends Application {
         announceIncident(accident);
     }
 
-    // Genera un accidente directamente al hacer clic en una celda del mapa (demo del curso).
+    // Genera un accidente directamente al hacer clic en una celda del mapa (detecta colision si hay un vehiculo alli).
     private void handleMapCellClicked(int row, int col) {
         if (!started || ended || paused) {
             return;
         }
         try {
-            Incident accident = controller.spawnAccidentAt(row, col);
+            Vehicle vehicleAtCell = mapView.findVehicleAt(row, col);
+            Incident accident;
+            if (vehicleAtCell != null) {
+                String location = "Calle Palmira (" + row + ", " + col + ")";
+                accident = controller.triggerCollisionAccident(vehicleAtCell.getId(), "VEH-TRANSITO", location);
+                toasts.show("¡COLISION DE " + vehicleAtCell.getId() + " EN (" + row + ", " + col + ")!",
+                        SpriteRegistry.forIncident(accident.getType()));
+            } else {
+                accident = controller.spawnAccidentAt(row, col);
+                toasts.show("¡ACCIDENTE REPORTADO EN (" + row + ", " + col + ")!",
+                        SpriteRegistry.forIncident(accident.getType()));
+            }
             RetroSound.play(RetroSound.Effect.ALERT);
             announceIncident(accident);
-            toasts.show("¡ACCIDENTE REPORTADO EN (" + row + ", " + col + ")!", SpriteRegistry.forIncident(accident.getType()));
         } catch (RuntimeException e) {
             toasts.show("No se pudo crear accidente: " + e.getMessage(), null);
         }

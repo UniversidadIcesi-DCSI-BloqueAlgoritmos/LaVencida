@@ -4,6 +4,7 @@ import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
 import com.icesi.model.IncidentStatus;
+import com.icesi.model.IncidentType;
 import com.icesi.model.IncidentGenerator;
 import com.icesi.model.IncidentManager;
 import com.icesi.model.Operator;
@@ -289,6 +290,11 @@ public class GameController {
         if (incident != null && incident.getId() != null) {
             generator.registerExistingId(incident.getId());
         }
+    }
+
+    // Actualiza un incidente activo y recalcula su prioridad dentro del BST.
+    public synchronized void updateIncident(String id, IncidentType type, Severity severity, String location, String description) {
+        manager.updateIncident(id, type, severity, location, description);
     }
 
     // RF3 / HU-06: Busca un incidente por id mediante busqueda binaria; lanza IncidentNotFoundException si no existe.

@@ -2,6 +2,7 @@ package com.icesi.controller;
 
 import com.icesi.exceptions.DuplicateIncidentException;
 import com.icesi.exceptions.IncidentNotFoundException;
+import com.icesi.exceptions.IncidentStateException;
 import com.icesi.model.CityMap;
 import com.icesi.model.Direction;
 import com.icesi.model.Incident;
@@ -360,5 +361,33 @@ class GameControllerTest {
         assertEquals(Severity.HIGH, inOrder.get(0).getSeverity());
         assertEquals(Severity.MEDIUM, inOrder.get(1).getSeverity());
         assertEquals(Severity.LOW, inOrder.get(2).getSeverity());
+    }
+
+    // Actualizacion de incidente - Caso 21: updateIncident actualiza los datos y reordena el incidente en el BST sin duplicar nodos.
+    @Test
+    void updateIncidentModifiesFieldsAndRebalancesBST() {
+        // Arrange
+        GameController controller = createController(8, 8);
+        Incident first = new Incident("INC-1", IncidentType.THEFT, "Zona A", Severity.MEDIUM);
+        Incident second = new Incident("INC-2", IncidentType.FIRE, "Zona B", Severity.LOW);
+        controller.registerIncident(first);
+        controller.registerIncident(second);
+
+        // Act: promovemos INC-2 de LOW a HIGH y actualizamos su ubicacion
+        controller.updateIncident("INC-2", IncidentType.ACCIDENT, Severity.HIGH, "Calle 30", "Choque multiple");
+
+        // Assert
+        Incident updated = controller.findIncidentById("INC-2");
+        assertEquals(IncidentType.ACCIDENT, updated.getType());
+        assertEquals(Severity.HIGH, updated.getSeverity());
+        assertEquals("Calle 30", updated.getLocation());
+        assertEquals(2, controller.getActiveIncidentsTree().size());
+        assertEquals("INC-2", controller.getHighestPriorityIncidentOrNull().getId());
+
+        // Si se resuelve, ya no debe permitir editarse
+        controller.assignVehicle(controller.proposeVehicle(updated).getId(), "INC-2");
+        controller.resolveIncident("INC-2");
+        assertThrows(IncidentStateException.class,
+                () -> controller.updateIncident("INC-2", IncidentType.THEFT, Severity.LOW, "Zona C", "Desc"));
     }
 }

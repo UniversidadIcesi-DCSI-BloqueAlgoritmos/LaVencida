@@ -131,6 +131,11 @@ Densidad de errores-fallos = 0.0 (0/160)
 Confiabilidad = 1.0 (160 pruebas pasando al 100% sin errores)
 Completitud = 1.0 (100% de la rúbrica de Entrega 3 cumplida)
 
+Iteración 20: 89d4132 (Pantalla de Estadísticas en vivo [K], actualización de incidentes con reordenamiento BST, diseño de pruebas TDD completo y diagrama UML actualizado)
+Densidad de errores-fallos = 0.0 (0/161)
+Confiabilidad = 1.0 (161 pruebas pasando al 100% sin fallos ni omisiones)
+Completitud = 1.0 (100% de la rúbrica de Entrega 3 verificada)
+
 ---
 
 ## Interfaz Gráfica y Pantallas (Entrega 3)
@@ -144,7 +149,7 @@ mvn javafx:run
 ### Pantallas del Sistema:
 1. **Pantalla de Menú Principal (`TitleScreen`)**: Portada animada de Palmira nocturna con cielo pixel-art, estrellas titilantes, panel de opciones y selector con ratón y teclado.
 2. **Centro de Monitoreo (`MonitoringCenterScreen`)**: Panel central de control con indicadores numéricos animados en tiempo real (puntaje, activos, robos, incendios, accidentes, libres), minimapa táctico de Palmira, incidente más urgente y flota de vehículos con registro (`[+] NUEVO`) y liberación (`[✕] LIBERAR`).
-3. **Panel de Incidentes (`IncidentPanelScreen`)**: Gestión operativa de incidentes con barra de búsqueda binaria $O(\log n)$ por ID, filtrado dinámico, despacho guiado con vehículo candidato propuesto según cercanía y resolución.
+3. **Panel de Incidentes (`IncidentPanelScreen`)**: Gestión operativa de incidentes (registro manual, actualización con `[✎ EDITAR]` y reordenamiento automático en el BST, consulta mediante búsqueda binaria $O(n \log n)$ por ID), despacho con unidad sugerida, liberación y resolución.
 4. **Escenario Dividido / Mapa de Tráfico (`SplitViewScreen`)**: Vista simultánea del mapa interactivo 64×64 y panel de incidentes, permitiendo al operador desplazarse en 4 direcciones con WASD, deshacer con pila LIFO y detonar incidentes al hacer clic sobre celdas transitables.
 5. **Pantalla del Árbol Binario (`BinaryTreeScreen`)**: Visualización gráfica del Árbol Binario de Búsqueda (`BinarySearchTree<Incident>`) que gestiona la prioridad de atención de incidentes en tiempo real. Permite alternar entre recorridos **In-Order** (mayor a menor urgencia), **Pre-Order** y **Post-Order**, inspeccionar cada nodo al hacer clic y consultar métricas de altura y equilibrio del árbol.
 6. **Corredores de Emergencia e Información de Movilidad (`MobilityDialog`)**: Visualización en tiempo real de las arterias viales principales de Palmira (`MAIN_ROAD`) con resaltado animado pulsante cian/amarillo, y diálogo de diagnóstico de fluidez vial, celdas de corredores, unidades en tránsito y tiempos de respuesta.
