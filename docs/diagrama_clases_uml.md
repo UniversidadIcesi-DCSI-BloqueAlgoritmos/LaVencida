@@ -25,7 +25,7 @@ El sistema sigue estrictamente el patrón arquitectónico **Modelo-Vista-Control
 
 ---
 
-## 2. Diagrama de Clases UML Completo (Fiel al Código Actual)
+## 2. Diagrama de Clases UML Completo (100% Fiel al Código Actual)
 
 ```mermaid
 classDiagram
@@ -62,6 +62,7 @@ classDiagram
         -statisticsDialog: StatisticsDialog
         -binaryTreeScreen: BinaryTreeScreen
         -mapView: CityMapView
+        -highScores: HighScoreStore
         -screens: Map~String, GameScreen~
         -currentScreen: GameScreen
         +start(stage: Stage) void
@@ -148,13 +149,14 @@ classDiagram
         -cityLayer: Canvas
         -spriteLayer: Canvas
         -nightLayer: Canvas
+        -dayNight: DayNightCycle
         -vehicleAnimator: VehicleAnimator
         -emergencyCorridorsVisible: boolean
         +getView() Node
         +toggleEmergencyCorridors() void
         +isEmergencyCorridorsVisible() boolean
-        +hasArrived(v: Vehicle) boolean
-        +setFocusedIncident(id: String) void
+        +hasArrived(vehicle: Vehicle) boolean
+        +setFocusedIncident(incidentId: String) void
         +shake() void
         -drawSprites(time: double) void
         -drawEmergencyCorridors(gc: GraphicsContext, time: double) void
@@ -164,13 +166,23 @@ classDiagram
         -cell: double
         +drawCity(gc: GraphicsContext) void
     }
+    class DayNightCycle {
+        -cityMap: CityMap
+        -cell: double
+        +phaseName(time: double) String
+        +draw(gc: GraphicsContext, width: double, height: double, time: double) void
+    }
+    class MiniMap {
+        -controller: GameController
+        +draw() void
+    }
     class VehicleAnimator {
         -controller: GameController
         -routeFinder: RouteFinder
-        +update(delta: double) void
-        +positionOf(v: Vehicle) double[]
-        +isMoving(v: Vehicle) boolean
-        +hasArrived(v: Vehicle) boolean
+        +update(seconds: double) void
+        +positionOf(vehicle: Vehicle) double[]
+        +isMoving(vehicle: Vehicle) boolean
+        +hasArrived(vehicle: Vehicle) boolean
     }
     class HudBar {
         +refresh(controller: GameController) void
@@ -211,9 +223,12 @@ classDiagram
     SplitViewScreen o-- "1" CityMapView
     SplitViewScreen o-- "1" IncidentPanelScreen
     CityMapView --> "1" CityRenderer : usa
+    CityMapView --> "1" DayNightCycle : usa
     CityMapView --> "1" VehicleAnimator : anima
     CityMapView ..> Canvas : dibuja en
     BinaryTreeScreen ..> Canvas : dibuja en
+    Canvas <|-- MiniMap
+    MonitoringCenterScreen o-- "1" MiniMap
 
     %% ==========================================
     %% CAPA CONTROLADOR (com.icesi.controller)
@@ -222,63 +237,94 @@ classDiagram
         +FAST_LIMIT_SECONDS: int = 30$
         +FAST_BONUS_POINTS: int = 50$
         +WAIT_PENALTY_POINTS: int = 25$
+        +WAIT_PERIOD_SECONDS: int = 30$
         -cityMap: CityMap
         -operator: Operator
         -vehicles: LinkedList~Vehicle~
         -manager: IncidentManager
+        -generator: IncidentGenerator
+        -resolver: MapPositionResolver
         -random: Random
+        -lastResolveFast: boolean
+        -chargedBlocks: Map~String, Integer~
         +createInitialVehicles()$ LinkedList~Vehicle~
         +moveOperator(direction: Direction) boolean
         +undoOperatorMove() boolean
         +spawnRandomIncident() Incident
-        +triggerCollisionAccident(v1: String, v2: String, loc: String) Incident
-        +triggerCongestionAccident(zone: String, count: int) Incident
-        +triggerStoppedVehicleAccident(v: String, loc: String, cycles: int) Incident
-        +spawnAccidentAt(row: int, col: int) Incident
+        +triggerCollisionAccident(vehicle1Id: String, vehicle2Id: String, location: String) Incident
+        +triggerCongestionAccident(zone: String, vehicleCount: int) Incident
+        +triggerStoppedVehicleAccident(vehicleId: String, location: String, stoppedCycles: int) Incident
+        +spawnAccidentAt(row: int, column: int) Incident
         +proposeVehicle(incident: Incident) Vehicle
         +assignVehicle(vehicleId: String, incidentId: String) void
         +releaseVehicle(vehicleId: String) void
         +cancelIncidentDispatch(incidentId: String) void
         +resolveIncident(incidentId: String) int
+        +resolveIncident(incidentId: String, now: LocalDateTime) int
+        +applyWaitPenalties(now: LocalDateTime) int
+        +wasLastResolveFast() boolean
         +registerIncident(incident: Incident) void
         +registerVehicle(vehicle: Vehicle) void
         +findIncidentById(incidentId: String) Incident
         +findVehicleById(vehicleId: String) Vehicle
+        +getHighestPriorityIncidentOrNull() Incident
+        +getCellOf(incident: Incident) int[]
+        +getCellOf(vehicle: Vehicle) int[]
         +getActiveIncidentsTree() BinarySearchTree~Incident~
         +getActiveIncidentsByPriority() LinkedList~Incident~
         +getActiveIncidentCount() int
         +getResolvedIncidentCount() int
         +getTotalIncidentCount() int
-        +isCorridorCell(row: int, col: int) boolean
+        +isCorridorCell(row: int, column: int) boolean
         +countCorridorCells() int
         +saveGame(folder: String) void
         +loadGame(folder: String) void
-        +saveGameBinary(file: String) void
-        +loadGameBinary(file: String) void
+        +saveGameBinary(filePath: String) void
+        +loadGameBinary(filePath: String) void
     }
     class IncidentSpawner {
         -controller: GameController
         -onSpawn: Consumer~Incident~
+        -fixedInterval: long
+        -paused: boolean
         -running: boolean
+        -fastMode: boolean
+        -thread: Thread
+        +intervalForScore(score: int)$ long
+        +intervalFor(score: int, fast: boolean)$ long
+        +setFastMode(fastMode: boolean) void
+        +spawnOnce() Incident
+        +setPaused(paused: boolean) void
+        +isPaused() boolean
         +start() void
         +stop() void
+        +isRunning() boolean
         +run() void
     }
     class ShiftTimer {
-        -onTick: Consumer~String~
-        -onEnd: Consumer~Result~
+        -onTick: Runnable
+        -stepMillis: long
+        -elapsedSeconds: int
+        -paused: boolean
+        -running: boolean
+        -thread: Thread
+        +tick(seconds: int) void
+        +getRemainingSeconds() int
+        +formatRemaining() String
+        +setPaused(paused: boolean) void
+        +evaluate(activeIncidents: int) Result
         +start() void
         +stop() void
+        +isRunning() boolean
         +run() void
     }
     class RouteFinder {
         -cityMap: CityMap
-        +findPath(fromRow: int, fromCol: int, toRow: int, toCol: int) LinkedList~int[]~
+        +findRoute(from: int[], to: int[]) LinkedList~int[]~
     }
     class MapPositionResolver {
         -cityMap: CityMap
-        +cellOf(incident: Incident) int[]
-        +stationOf(vehicle: Vehicle) int[]
+        +resolve(location: String) int[]
     }
 
     GameApplication o-- "1" GameController : controller
@@ -289,6 +335,7 @@ classDiagram
     GameApplication o-- "1" ShiftEndView
     GameApplication --> "1" IncidentSpawner
     GameApplication --> "1" ShiftTimer
+    GameApplication --> "1" HighScoreStore
     IncidentSpawner --> "1" GameController : spawnRandomIncident()
     VehicleAnimator --> "1" RouteFinder : calcula BFS
 
@@ -304,27 +351,28 @@ classDiagram
         +MAIN_ROAD: int = 4$
         -grid: int[][]
         +getSize() int
-        +isInsideBounds(row: int, col: int) boolean
-        +getCell(row: int, col: int) int
-        +isWalkable(row: int, col: int) boolean
+        +isInsideBounds(row: int, column: int) boolean
+        +getCell(row: int, column: int) int
+        +isWalkable(row: int, column: int) boolean
     }
     class Operator {
         -row: int
         -column: int
-        -score: int
         -movementHistory: Stack~Movement~
-        +move(direction: Direction, map: CityMap) boolean
+        -score: int
+        +move(direction: Direction) void
         +undoLastMovement() Movement
         +addScore(points: int) void
-        +subtractScore(points: int) void
+        +getScore() int
         +getMovementCount() int
     }
     class Movement {
-        -fromRow: int
-        -fromCol: int
-        -toRow: int
-        -toCol: int
         -direction: Direction
+        -previousRow: int
+        -previousColumn: int
+        +getDirection() Direction
+        +getPreviousRow() int
+        +getPreviousColumn() int
     }
     class Vehicle {
         -id: String
@@ -332,7 +380,11 @@ classDiagram
         -location: String
         -status: VehicleStatus
         -assignedIncident: Incident
-        +isCompatibleWith(type: IncidentType) boolean
+        +getId() String
+        +getType() VehicleType
+        +getLocation() String
+        +getStatus() VehicleStatus
+        +getAssignedIncident() Incident
     }
     class Incident {
         -id: String
@@ -344,27 +396,46 @@ classDiagram
         -resolvedAt: LocalDateTime
         -description: String
         -assignedVehicle: Vehicle
+        +getId() String
+        +getType() IncidentType
+        +getSeverity() Severity
+        +getStatus() IncidentStatus
     }
     class IncidentManager {
         -incidents: LinkedList~Incident~
         -activeIncidentsTree: BinarySearchTree~Incident~
         +registerIncident(incident: Incident) void
+        +getIncidentCount() int
+        +getIncidentAt(index: int) Incident
         +findIncidentById(id: String) Incident
         +getHighestPriorityIncident() Incident
-        +proposeCandidateVehicle(inc: Incident, vehicles: LinkedList~Vehicle~) Vehicle
-        +assignVehicle(inc: Incident, v: Vehicle) void
-        +releaseVehicle(v: Vehicle) void
-        +finishAttention(inc: Incident, op: Operator, now: LocalDateTime) int
+        +proposeCandidateVehicle(incident: Incident, vehicles: LinkedList~Vehicle~) Vehicle
+        +assignVehicle(vehicle: Vehicle, incident: Incident) void
+        +releaseVehicle(vehicle: Vehicle) void
+        +finishAttention(incident: Incident) void
+        +finishAttention(incident: Incident, operator: Operator, resolvedAt: LocalDateTime) int
+        +calculateScore(incident: Incident, resolvedAt: LocalDateTime) int
+        +getIncidentsSortedByPriority() LinkedList~Incident~
         +getActiveIncidentsByPriority() LinkedList~Incident~
         +getActiveIncidentsTree() BinarySearchTree~Incident~
         +getActiveIncidentCount() int
         +getResolvedIncidentCount() int
+        +getTotalIncidentCount() int
+        +countAvailableVehicles(vehicles: LinkedList~Vehicle~) int
     }
     class IncidentGenerator {
-        +generateRandomIncident() Incident
-        +detectCollisionAccident(v1: String, v2: String, loc: String) Incident
-        +detectCongestionAccident(zone: String, count: int) Incident
-        +detectStoppedVehicleAccident(v: String, loc: String, cycles: int) Incident
+        +CRITICAL_CONGESTION_THRESHOLD: int = 5$
+        +STOPPED_CYCLES_THRESHOLD: int = 3$
+        -accidentCounter: int
+        -theftCounter: int
+        -fireCounter: int
+        -random: Random
+        +registerExistingId(id: String) void
+        +generateRandomTheft() Incident
+        +generateRandomFire() Incident
+        +checkCollisionAccident(vehicle1Id: String, vehicle2Id: String, location: String) Incident
+        +checkCongestionAccident(zone: String, vehicleCount: int) Incident
+        +checkStoppedVehicleAccident(vehicleId: String, location: String, stoppedCycles: int) Incident
     }
     class BinarySearchTree~T~ {
         -root: BSTNode~T~
@@ -373,12 +444,15 @@ classDiagram
         +insert(value: T) void
         +contains(value: T) boolean
         +search(value: T) T
-        +remove(value: T) boolean
+        +delete(value: T) boolean
+        +findMin() T
+        +findMax() T
         +inOrder() LinkedList~T~
         +preOrder() LinkedList~T~
         +postOrder() LinkedList~T~
         +height() int
         +size() int
+        +clear() void
         +getRoot() BSTNode~T~
     }
     class BSTNode~T~ {
@@ -392,30 +466,38 @@ classDiagram
         -size: int
         +addFirst(value: T) void
         +addLast(value: T) void
+        +getFirst() T
+        +removeFirst() T
         +get(index: int) T
         +remove(index: int) T
-        +sort(cmp: Comparator~T~) void
-        +binarySearch(target: T, cmp: Comparator~T~) int
+        +contains(value: T) boolean
+        +sort(comparator: Comparator~T~) void
+        +binarySearch(target: T, comparator: Comparator~T~) int
         +size() int
     }
     class Stack~T~ {
-        -top: Node~T~
-        -size: int
+        -elements: LinkedList~T~
         +push(value: T) void
         +pop() T
         +peek() T
         +isEmpty() boolean
+        +size() int
     }
     class JsonPersistence {
-        +save(folder: Path, op: Operator, vehicles: LinkedList~Vehicle~, incidents: LinkedList~Incident~)$ void
-        +load(folder: Path)$ GameState
+        +saveVehicles(vehicles: LinkedList~Vehicle~, filePath: String) void
+        +loadVehicles(filePath: String) LinkedList~Vehicle~
+        +saveIncidents(incidents: LinkedList~Incident~, filePath: String) void
+        +loadIncidents(filePath: String) LinkedList~Incident~
+        +loadIncidents(filePath: String, vehicles: LinkedList~Vehicle~) LinkedList~Incident~
+        +saveOperator(operator: Operator, filePath: String) void
+        +loadOperator(filePath: String) Operator
     }
     class SerializationPersistence {
-        +save(file: Path, state: Serializable)$ void
-        +load(file: Path)$ Object
+        +saveManagerState(manager: IncidentManager, filePath: String) void
+        +loadManagerState(filePath: String) IncidentManager
     }
     class HighScoreStore {
-        -file: Path
+        -filePath: String
         +load() int
         +saveIfHigher(score: int) boolean
     }
@@ -423,6 +505,8 @@ classDiagram
     GameController o-- "1" CityMap : cityMap
     GameController o-- "1" Operator : operator
     GameController o-- "1" IncidentManager : manager
+    GameController o-- "1" IncidentGenerator : generator
+    GameController o-- "1" MapPositionResolver : resolver
     GameController o-- "1" LinkedList : vehicles
     GameController ..> JsonPersistence : F5 / F9
     GameController ..> SerializationPersistence : F6 / F10
@@ -431,7 +515,8 @@ classDiagram
     IncidentManager o-- "1" LinkedList : incidents
     BinarySearchTree *-- "0..1" BSTNode
     Operator *-- "1" Stack : movementHistory
-    Operator *-- "*" Movement
+    Stack *-- "1" LinkedList : elements
+    Stack ..> Movement
     Vehicle "0..1" --> "0..1" Incident : assignedIncident
     IncidentManager o-- "0..*" Incident
 ```
@@ -440,10 +525,10 @@ classDiagram
 
 ## 3. Estructuras, Enumeraciones, Excepciones y Complejidades
 
-- **Enumeraciones (`model`)**: `Direction (UP, DOWN, LEFT, RIGHT)`, `IncidentType (ACCIDENT, THEFT, FIRE)`, `IncidentStatus (PENDING, IN_PROGRESS, RESOLVED)`, `Severity (HIGH, MEDIUM, LOW)`, `VehicleType (AMBULANCE, PATROL, FIRE_TRUCK)`, `VehicleStatus (AVAILABLE, BUSY)`.
+- **Enumeraciones (`model`)**: `Direction (UP, DOWN, LEFT, RIGHT)`, `IncidentType (ACCIDENT, THEFT, FIRE)`, `IncidentStatus (PENDING, IN_PROGRESS, RESOLVED)`, `Severity (HIGH, MEDIUM, LOW)`, `VehicleType (PATROL, AMBULANCE, FIRE_TRUCK)`, `VehicleStatus (AVAILABLE, EN_ROUTE, ATTENDING, OUT_OF_SERVICE)`, además de `ShiftTimer.Result (PLAYING, TIME_UP, OVERLOADED)` en `controller`.
 - **Excepciones propias (`exceptions`)**: `DuplicateIncidentException`, `EmptyStructureException`, `IncidentNotFoundException`, `IncidentStateException`, `NoActiveIncidentsException`, `PersistenceException`, `VehicleAssignmentException`, `VehicleReleaseException`.
 - **Complejidades**:
   1. `BinarySearchTree<Incident>`: Inserción/búsqueda $O(\log n)$ promedio; recorridos `inOrder`, `preOrder`, `postOrder` $O(n)$.
-  2. `LinkedList<T>`: Inserción al inicio/final $O(1)$; ordenamiento MergeSort $O(n \log n)$ y `binarySearch` $O(\log n)$.
-  3. `Stack<Movement>`: `push` y `pop` en $O(1)$ para deshacer movimientos.
+  2. `LinkedList<T>`: Inserción al inicio/final $O(1)$; ordenamiento (`sort` por burbuja optimizada) $O(n^2)$ / $O(n)$ mejor caso y `binarySearch` $O(n \log n)$ (debido a `get(middle)` sobre lista enlazada).
+  3. `Stack<Movement>`: Respaldada por `LinkedList<Movement>`, `push` y `pop` en $O(1)$ para deshacer movimientos.
   4. `RouteFinder` (BFS): $O(V + E)$ sobre la matriz $64 \times 64 = 4096$ celdas de Palmira.
