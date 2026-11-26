@@ -625,4 +625,66 @@ class IncidentManagerTest {
         assertThrows(VehicleAssignmentException.class,
                 () -> manager.proposeCandidateVehicle(fire, fleet));
     }
+
+    // Caso BST 1: Consultar los incidentes activos por prioridad retorna la lista ordenada por gravedad y fecha usando el BST.
+    @Test
+    void getActiveIncidentsByPriorityReturnsIncidentsOrderedByBst() {
+        // Arrange
+        LocalDateTime baseTime = LocalDateTime.of(2026, 10, 28, 10, 0, 0);
+        Incident lowOld = new Incident("I-LOW", IncidentType.THEFT, "Norte", Severity.LOW, baseTime);
+        Incident highRecent = new Incident("I-HIGH-REC", IncidentType.FIRE, "Sur", Severity.HIGH, baseTime.plusMinutes(10));
+        Incident highOld = new Incident("I-HIGH-OLD", IncidentType.ACCIDENT, "Centro", Severity.HIGH, baseTime.plusMinutes(5));
+
+        manager.registerIncident(lowOld);
+        manager.registerIncident(highRecent);
+        manager.registerIncident(highOld);
+
+        // Act
+        LinkedList<Incident> activeByPriority = manager.getActiveIncidentsByPriority();
+
+        // Assert: HIGH antiguo (10:05), luego HIGH reciente (10:10), luego LOW (10:00)
+        assertEquals(3, activeByPriority.size());
+        assertEquals("I-HIGH-OLD", activeByPriority.get(0).getId());
+        assertEquals("I-HIGH-REC", activeByPriority.get(1).getId());
+        assertEquals("I-LOW", activeByPriority.get(2).getId());
+    }
+
+    // Caso BST 2: Finalizar la atencion de un incidente lo remueve del arbol BST de activos y actualiza el prioritario.
+    @Test
+    void resolvingIncidentRemovesItFromActiveIncidentsTree() {
+        // Arrange
+        LocalDateTime baseTime = LocalDateTime.of(2026, 10, 28, 10, 0, 0);
+        Incident high = new Incident("I-HIGH", IncidentType.FIRE, "Sur", Severity.HIGH, baseTime);
+        Incident medium = new Incident("I-MED", IncidentType.THEFT, "Norte", Severity.MEDIUM, baseTime);
+
+        manager.registerIncident(high);
+        manager.registerIncident(medium);
+
+        Vehicle fireTruck = new Vehicle("B-01", VehicleType.FIRE_TRUCK);
+        manager.assignVehicle(fireTruck, high);
+
+        // Act: Finalizamos la atencion de high
+        manager.finishAttention(high);
+
+        // Assert: Ahora el de mayor prioridad en el BST debe ser medium
+        assertEquals(medium, manager.getHighestPriorityIncident());
+        assertEquals(1, manager.getActiveIncidentsByPriority().size());
+        assertEquals("I-MED", manager.getActiveIncidentsByPriority().get(0).getId());
+    }
+
+    // Caso BST 3: Cuando todos los incidentes activos son atendidos, el arbol de activos queda vacio y lanza NoActiveIncidentsException.
+    @Test
+    void getHighestPriorityIncidentThrowsExceptionWhenAllActiveIncidentsAreResolved() {
+        // Arrange
+        Incident high = new Incident("I-HIGH", IncidentType.FIRE, "Sur", Severity.HIGH);
+        manager.registerIncident(high);
+
+        Vehicle fireTruck = new Vehicle("B-01", VehicleType.FIRE_TRUCK);
+        manager.assignVehicle(fireTruck, high);
+        manager.finishAttention(high);
+
+        // Act & Assert
+        assertThrows(NoActiveIncidentsException.class, () -> manager.getHighestPriorityIncident());
+        assertTrue(manager.getActiveIncidentsByPriority().isEmpty());
+    }
 }

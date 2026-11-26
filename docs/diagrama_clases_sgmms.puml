@@ -1,0 +1,626 @@
+@startuml SGMMS_Diagrama_Clases_Final
+title SGMMS (Palmira) - Diagrama de Clases MVC + JavaFX + Canvas (Entrega 3)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+
+' ==========================================================
+' PAQUETE RAIZ: com.icesi (Punto de entrada JavaFX)
+' ==========================================================
+package "com.icesi" #F4F6F9 {
+    class Launcher {
+        +main(args: String[]): void
+    }
+
+    class GameApplication {
+        -controller: GameController
+        -hud: HudBar
+        -content: StackPane
+        -titleScreen: TitleScreen
+        -centerScreen: MonitoringCenterScreen
+        -eventLog: EventLog
+        -spawner: IncidentSpawner
+        -shiftTimer: ShiftTimer
+        -shiftEndView: ShiftEndView
+        -pauseView: PauseView
+        -helpView: HelpView
+        -optionsView: OptionsView
+        -registrationDialog: IncidentRegistrationDialog
+        -vehicleDialog: VehicleRegistrationDialog
+        -trafficDialog: TrafficSimulationDialog
+        -mobilityDialog: MobilityDialog
+        -statisticsDialog: StatisticsDialog
+        -binaryTreeScreen: BinaryTreeScreen
+        -mapView: CityMapView
+        -highScores: HighScoreStore
+        -screens: Map<String, GameScreen>
+        -currentScreen: GameScreen
+        +start(stage: Stage): void
+        +showScreen(name: String): void
+        +openRegistrationDialog(): void
+        +openVehicleRegistrationDialog(): void
+        +openTrafficSimulationDialog(): void
+        +openMobilityDialog(): void
+        +openStatisticsDialog(): void
+        +toggleEmergencyCorridors(): void
+        -handleKey(code: KeyCode): void
+        -refreshAll(): void
+    }
+}
+
+class "javafx.application.Application" <<JavaFX>> #FFFFFF
+class "javafx.scene.canvas.Canvas" <<JavaFX>> #FFFFFF
+
+Launcher ..> GameApplication : delega main()
+GameApplication --|> "javafx.application.Application"
+
+' ==========================================================
+' VISTA: com.icesi.ui
+' ==========================================================
+package "ui (VISTA)" #E6F4EA {
+    interface GameScreen {
+        +getView(): Node
+        +refresh(): void
+        +handleKey(code: KeyCode): boolean
+    }
+
+    class TitleScreen {
+        -root: Pane
+        -canvas: Canvas
+        -selected: int
+        -record: int
+        +getView(): Node
+        +start(): void
+        +stop(): void
+        +moveSelection(step: int): void
+        +getSelectedOption(): String
+        +selectAt(y: double): boolean
+    }
+
+    class MonitoringCenterScreen {
+        -controller: GameController
+        -navigator: Consumer<String>
+        -eventLog: EventLog
+        -miniMap: MiniMap
+        +getView(): Node
+        +refresh(): void
+        +handleKey(code: KeyCode): boolean
+        +showEvent(message: String): void
+    }
+
+    class IncidentPanelScreen {
+        -controller: GameController
+        -eventLog: EventLog
+        -selected: Incident
+        -focusedId: String
+        -searchInput: TextField
+        +getView(): Node
+        +getCompactView(): Node
+        +executeBinarySearch(): void
+        +clearSearch(): void
+        +refresh(): void
+        +handleKey(code: KeyCode): boolean
+    }
+
+    class SplitViewScreen {
+        -controller: GameController
+        -mapView: CityMapView
+        -incidentPanel: IncidentPanelScreen
+        +getView(): Node
+        +refresh(): void
+        +handleKey(code: KeyCode): boolean
+    }
+
+    class BinaryTreeScreen {
+        -controller: GameController
+        -navigator: Consumer<String>
+        -treeCanvas: Canvas
+        -currentMode: TraversalMode
+        -selectedIncident: Incident
+        +getView(): Node
+        +refresh(): void
+        +handleKey(code: KeyCode): boolean
+        -drawTree(): void
+    }
+
+    class CityMapView {
+        +CELL: double = 11
+        -controller: GameController
+        -cityLayer: Canvas
+        -spriteLayer: Canvas
+        -nightLayer: Canvas
+        -dayNight: DayNightCycle
+        -vehicleAnimator: VehicleAnimator
+        -emergencyCorridorsVisible: boolean
+        +getView(): Node
+        +toggleEmergencyCorridors(): void
+        +isEmergencyCorridorsVisible(): boolean
+        +hasArrived(vehicle: Vehicle): boolean
+        +setFocusedIncident(incidentId: String): void
+        +shake(): void
+        -drawSprites(time: double): void
+        -drawEmergencyCorridors(gc: GraphicsContext, time: double): void
+    }
+
+    class CityRenderer {
+        -cityMap: CityMap
+        -cell: double
+        +drawCity(gc: GraphicsContext): void
+    }
+
+    class DayNightCycle {
+        -cityMap: CityMap
+        -cell: double
+        +phaseName(time: double): String
+        +draw(gc: GraphicsContext, width: double, height: double, time: double): void
+    }
+
+    class MiniMap {
+        -controller: GameController
+        +draw(): void
+    }
+
+    class VehicleAnimator {
+        -controller: GameController
+        -routeFinder: RouteFinder
+        +update(seconds: double): void
+        +positionOf(vehicle: Vehicle): double[]
+        +isMoving(vehicle: Vehicle): boolean
+        +hasArrived(vehicle: Vehicle): boolean
+    }
+
+    class HudBar {
+        +refresh(controller: GameController): void
+        +setShiftTime(text: String, lastMinute: boolean): void
+        +setActiveScreen(screen: String): void
+        +setCorridorsActive(active: boolean): void
+    }
+
+    class IncidentRegistrationDialog {
+        +open(): void
+    }
+    class VehicleRegistrationDialog {
+        +open(): void
+    }
+    class TrafficSimulationDialog {
+        -controller: GameController
+        +open(): void
+    }
+    class MobilityDialog {
+        -controller: GameController
+        -mapView: CityMapView
+        +updateStatus(): void
+        +open(): void
+    }
+    class StatisticsDialog {
+        -controller: GameController
+        -highScores: HighScoreStore
+        +refreshStats(): void
+        +open(): void
+    }
+    class ShiftEndView {
+        +show(result: ShiftTimer.Result, score: int): void
+    }
+    class HelpView
+    class OptionsView
+    class PauseView
+    class EventLog
+    class SpriteRegistry
+    class RetroTheme
+    class RetroSound
+
+    GameScreen <|.. MonitoringCenterScreen
+    GameScreen <|.. IncidentPanelScreen
+    GameScreen <|.. SplitViewScreen
+    GameScreen <|.. BinaryTreeScreen
+    SplitViewScreen o-- "1" CityMapView
+    SplitViewScreen o-- "1" IncidentPanelScreen
+    CityMapView --> "1" CityRenderer : usa
+    CityMapView --> "1" DayNightCycle : usa
+    CityMapView --> "1" VehicleAnimator : anima
+    CityMapView ..> "javafx.scene.canvas.Canvas" : dibuja en
+    BinaryTreeScreen ..> "javafx.scene.canvas.Canvas" : dibuja en
+    MiniMap --|> "javafx.scene.canvas.Canvas"
+    MonitoringCenterScreen o-- "1" MiniMap
+}
+
+note bottom of CityMapView
+  La vista lee el modelo/controlador
+  y dibuja sprites, rutas y BST en Canvas.
+end note
+
+' ==========================================================
+' CONTROLADOR: com.icesi.controller
+' ==========================================================
+package "controller (CONTROLADOR)" #D2E3FC {
+    class GameController {
+        +FAST_LIMIT_SECONDS: int = 30
+        +FAST_BONUS_POINTS: int = 50
+        +WAIT_PENALTY_POINTS: int = 25
+        +WAIT_PERIOD_SECONDS: int = 30
+        -cityMap: CityMap
+        -operator: Operator
+        -vehicles: LinkedList<Vehicle>
+        -manager: IncidentManager
+        -generator: IncidentGenerator
+        -resolver: MapPositionResolver
+        -random: Random
+        -lastResolveFast: boolean
+        -chargedBlocks: Map<String, Integer>
+        +createInitialVehicles(): LinkedList<Vehicle>
+        +moveOperator(direction: Direction): boolean
+        +undoOperatorMove(): boolean
+        +spawnRandomIncident(): Incident
+        +triggerCollisionAccident(vehicle1Id: String, vehicle2Id: String, location: String): Incident
+        +triggerCongestionAccident(zone: String, vehicleCount: int): Incident
+        +triggerStoppedVehicleAccident(vehicleId: String, location: String, stoppedCycles: int): Incident
+        +spawnAccidentAt(row: int, column: int): Incident
+        +proposeVehicle(incident: Incident): Vehicle
+        +assignVehicle(vehicleId: String, incidentId: String): void
+        +releaseVehicle(vehicleId: String): void
+        +cancelIncidentDispatch(incidentId: String): void
+        +resolveIncident(incidentId: String): int
+        +resolveIncident(incidentId: String, now: LocalDateTime): int
+        +applyWaitPenalties(now: LocalDateTime): int
+        +wasLastResolveFast(): boolean
+        +registerIncident(incident: Incident): void
+        +updateIncident(id: String, type: IncidentType, severity: Severity, location: String, description: String): void
+        +registerVehicle(vehicle: Vehicle): void
+        +findIncidentById(incidentId: String): Incident
+        +findVehicleById(vehicleId: String): Vehicle
+        +getHighestPriorityIncidentOrNull(): Incident
+        +getCellOf(incident: Incident): int[]
+        +getCellOf(vehicle: Vehicle): int[]
+        +getActiveIncidentsTree(): BinarySearchTree<Incident>
+        +getActiveIncidentsByPriority(): LinkedList<Incident>
+        +getActiveIncidentCount(): int
+        +getResolvedIncidentCount(): int
+        +getTotalIncidentCount(): int
+        +isCorridorCell(row: int, column: int): boolean
+        +countCorridorCells(): int
+        +saveGame(folder: String): void
+        +loadGame(folder: String): void
+        +saveGameBinary(filePath: String): void
+        +loadGameBinary(filePath: String): void
+    }
+
+    class IncidentSpawner {
+        -controller: GameController
+        -onSpawn: Consumer<Incident>
+        -fixedInterval: long
+        -paused: boolean
+        -running: boolean
+        -fastMode: boolean
+        -thread: Thread
+        +intervalForScore(score: int): long
+        +intervalFor(score: int, fast: boolean): long
+        +setFastMode(fastMode: boolean): void
+        +spawnOnce(): Incident
+        +setPaused(paused: boolean): void
+        +isPaused(): boolean
+        +start(): void
+        +stop(): void
+        +isRunning(): boolean
+        +run(): void
+    }
+
+    class ShiftTimer {
+        -onTick: Runnable
+        -stepMillis: long
+        -elapsedSeconds: int
+        -paused: boolean
+        -running: boolean
+        -thread: Thread
+        +tick(seconds: int): void
+        +getRemainingSeconds(): int
+        +formatRemaining(): String
+        +setPaused(paused: boolean): void
+        +evaluate(activeIncidents: int): Result
+        +start(): void
+        +stop(): void
+        +isRunning(): boolean
+        +run(): void
+    }
+
+    class RouteFinder {
+        -cityMap: CityMap
+        +findRoute(from: int[], to: int[]): LinkedList<int[]>
+    }
+
+    class MapPositionResolver {
+        -cityMap: CityMap
+        +resolve(location: String): int[]
+    }
+}
+
+GameApplication o-- "1" GameController : controller
+GameApplication o-- "*" GameScreen : screens
+GameApplication --> "1" IncidentSpawner
+GameApplication --> "1" ShiftTimer
+GameApplication --> "1" HighScoreStore
+IncidentSpawner --> "1" GameController : spawnRandomIncident()
+VehicleAnimator --> "1" RouteFinder : calcula BFS
+
+' ==========================================================
+' MODELO + ESTRUCTURAS + PERSISTENCIA + EXCEPCIONES
+' ==========================================================
+package "model (MODELO)" #FEF7E0 {
+    class CityMap {
+        +MAP_SIZE: int = 64
+        +PATH: int = 0
+        +OBSTACLE: int = 1
+        +RESIDENTIAL: int = 2
+        +COMMERCIAL: int = 3
+        +MAIN_ROAD: int = 4
+        -grid: int[][]
+        +getSize(): int
+        +isInsideBounds(row: int, column: int): boolean
+        +getCell(row: int, column: int): int
+        +isWalkable(row: int, column: int): boolean
+    }
+
+    class Operator {
+        -row: int
+        -column: int
+        -movementHistory: Stack<Movement>
+        -score: int
+        +move(direction: Direction): void
+        +undoLastMovement(): Movement
+        +addScore(points: int): void
+        +getScore(): int
+        +getMovementCount(): int
+    }
+
+    class Movement {
+        -direction: Direction
+        -previousRow: int
+        -previousColumn: int
+        +getDirection(): Direction
+        +getPreviousRow(): int
+        +getPreviousColumn(): int
+    }
+
+    class Vehicle {
+        -id: String
+        -type: VehicleType
+        -location: String
+        -status: VehicleStatus
+        -assignedIncident: Incident
+        +getId(): String
+        +getType(): VehicleType
+        +getLocation(): String
+        +getStatus(): VehicleStatus
+        +getAssignedIncident(): Incident
+    }
+
+    class Incident {
+        -id: String
+        -type: IncidentType
+        -location: String
+        -severity: Severity
+        -status: IncidentStatus
+        -generatedAt: LocalDateTime
+        -resolvedAt: LocalDateTime
+        -description: String
+        -assignedVehicle: Vehicle
+        +getId(): String
+        +getType(): IncidentType
+        +getSeverity(): Severity
+        +getStatus(): IncidentStatus
+    }
+
+    class IncidentManager {
+        -incidents: LinkedList<Incident>
+        -activeIncidentsTree: BinarySearchTree<Incident>
+        +registerIncident(incident: Incident): void
+        +updateIncident(id: String, type: IncidentType, severity: Severity, location: String, description: String): void
+        +getIncidentCount(): int
+        +getIncidentAt(index: int): Incident
+        +findIncidentById(id: String): Incident
+        +getHighestPriorityIncident(): Incident
+        +proposeCandidateVehicle(incident: Incident, vehicles: LinkedList<Vehicle>): Vehicle
+        +assignVehicle(vehicle: Vehicle, incident: Incident): void
+        +releaseVehicle(vehicle: Vehicle): void
+        +finishAttention(incident: Incident): void
+        +finishAttention(incident: Incident, operator: Operator, resolvedAt: LocalDateTime): int
+        +calculateScore(incident: Incident, resolvedAt: LocalDateTime): int
+        +getIncidentsSortedByPriority(): LinkedList<Incident>
+        +getActiveIncidentsByPriority(): LinkedList<Incident>
+        +getActiveIncidentsTree(): BinarySearchTree<Incident>
+        +getActiveIncidentCount(): int
+        +getResolvedIncidentCount(): int
+        +getTotalIncidentCount(): int
+        +countAvailableVehicles(vehicles: LinkedList<Vehicle>): int
+    }
+
+    class IncidentGenerator {
+        +CRITICAL_CONGESTION_THRESHOLD: int = 5
+        +STOPPED_CYCLES_THRESHOLD: int = 3
+        -accidentCounter: int
+        -theftCounter: int
+        -fireCounter: int
+        -random: Random
+        +registerExistingId(id: String): void
+        +generateRandomTheft(): Incident
+        +generateRandomFire(): Incident
+        +checkCollisionAccident(vehicle1Id: String, vehicle2Id: String, location: String): Incident
+        +checkCongestionAccident(zone: String, vehicleCount: int): Incident
+        +checkStoppedVehicleAccident(vehicleId: String, location: String, stoppedCycles: int): Incident
+    }
+
+    class IncidentPriorityComparator
+    class IncidentIdComparator
+
+    enum Direction {
+        UP
+        DOWN
+        LEFT
+        RIGHT
+    }
+    enum IncidentType {
+        ACCIDENT
+        THEFT
+        FIRE
+    }
+    enum IncidentStatus {
+        PENDING
+        IN_PROGRESS
+        RESOLVED
+    }
+    enum Severity {
+        HIGH
+        MEDIUM
+        LOW
+    }
+    enum VehicleType {
+        PATROL
+        AMBULANCE
+        FIRE_TRUCK
+    }
+    enum VehicleStatus {
+        AVAILABLE
+        EN_ROUTE
+        ATTENDING
+        OUT_OF_SERVICE
+    }
+
+    Vehicle "0..1" --> "0..1" Incident : assignedIncident
+    IncidentManager o-- "0..*" Incident
+    Incident --> "1" IncidentType
+    Incident --> "1" IncidentStatus
+    Incident --> "1" Severity
+    Vehicle --> "1" VehicleType
+    Vehicle --> "1" VehicleStatus
+}
+
+package "structures (ESTRUCTURAS PROPIAS)" #FFF3CD {
+    class BinarySearchTree<T> {
+        -root: BSTNode<T>
+        -comparator: Comparator<T>
+        -size: int
+        +insert(value: T): void
+        +contains(value: T): boolean
+        +search(value: T): T
+        +delete(value: T): boolean
+        +findMin(): T
+        +findMax(): T
+        +inOrder(): LinkedList<T>
+        +preOrder(): LinkedList<T>
+        +postOrder(): LinkedList<T>
+        +height(): int
+        +size(): int
+        +clear(): void
+        +getRoot(): BSTNode<T>
+    }
+
+    class BSTNode<T> {
+        -value: T
+        -left: BSTNode<T>
+        -right: BSTNode<T>
+    }
+
+    class LinkedList<T> {
+        -head: Node<T>
+        -tail: Node<T>
+        -size: int
+        +addFirst(value: T): void
+        +addLast(value: T): void
+        +getFirst(): T
+        +removeFirst(): T
+        +get(index: int): T
+        +remove(index: int): T
+        +contains(value: T): boolean
+        +sort(comparator: Comparator<T>): void
+        +binarySearch(target: T, comparator: Comparator<T>): int
+        +size(): int
+    }
+
+    class Node<T> {
+        -value: T
+        -next: Node<T>
+    }
+
+    class Stack<T> {
+        -elements: LinkedList<T>
+        +push(value: T): void
+        +pop(): T
+        +peek(): T
+        +isEmpty(): boolean
+        +size(): int
+    }
+
+    BinarySearchTree *-- "0..1" BSTNode
+    LinkedList *-- "0..*" Node
+    Stack *-- "1" LinkedList : elements
+}
+
+package "persistence (PERSISTENCIA)" #FCE8E6 {
+    class JsonPersistence {
+        +saveVehicles(vehicles: LinkedList<Vehicle>, filePath: String): void
+        +loadVehicles(filePath: String): LinkedList<Vehicle>
+        +saveIncidents(incidents: LinkedList<Incident>, filePath: String): void
+        +loadIncidents(filePath: String): LinkedList<Incident>
+        +loadIncidents(filePath: String, vehicles: LinkedList<Vehicle>): LinkedList<Incident>
+        +saveOperator(operator: Operator, filePath: String): void
+        +loadOperator(filePath: String): Operator
+    }
+    class SerializationPersistence {
+        +saveManagerState(manager: IncidentManager, filePath: String): void
+        +loadManagerState(filePath: String): IncidentManager
+    }
+    class HighScoreStore {
+        -filePath: String
+        +load(): int
+        +saveIfHigher(score: int): boolean
+    }
+}
+
+package "exceptions (EXCEPCIONES)" #FCE8E6 {
+    class RuntimeException <<java.lang>> #FFFFFF
+    class DuplicateIncidentException
+    class EmptyStructureException
+    class IncidentNotFoundException
+    class IncidentStateException
+    class NoActiveIncidentsException
+    class PersistenceException
+    class VehicleAssignmentException
+    class VehicleReleaseException
+
+    RuntimeException <|-- DuplicateIncidentException
+    RuntimeException <|-- EmptyStructureException
+    RuntimeException <|-- IncidentNotFoundException
+    RuntimeException <|-- IncidentStateException
+    RuntimeException <|-- NoActiveIncidentsException
+    RuntimeException <|-- PersistenceException
+    RuntimeException <|-- VehicleAssignmentException
+    RuntimeException <|-- VehicleReleaseException
+}
+
+GameController o-- "1" CityMap : cityMap
+GameController o-- "1" Operator : operator
+GameController o-- "1" IncidentManager : manager
+GameController o-- "1" IncidentGenerator : generator
+GameController o-- "1" MapPositionResolver : resolver
+GameController o-- "1" LinkedList : vehicles
+GameController ..> JsonPersistence : F5/F9
+GameController ..> SerializationPersistence : F6/F10
+
+IncidentManager o-- "1" BinarySearchTree : activeIncidentsTree
+IncidentManager o-- "1" LinkedList : incidents
+IncidentManager ..> IncidentPriorityComparator
+IncidentManager ..> IncidentIdComparator
+Operator *-- "1" Stack : movementHistory
+Stack ..> Movement
+IncidentManager ..> DuplicateIncidentException : lanza
+IncidentManager ..> IncidentNotFoundException : lanza
+IncidentManager ..> IncidentStateException : lanza
+IncidentManager ..> NoActiveIncidentsException : lanza
+IncidentManager ..> VehicleAssignmentException : lanza
+IncidentManager ..> VehicleReleaseException : lanza
+
+note left of CityMap
+  El modelo NO importa nada de JavaFX.
+  Se prueba con JUnit (160 tests) sin abrir ventanas.
+end note
+
+@enduml

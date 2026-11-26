@@ -1,6 +1,7 @@
 package com.icesi.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 import java.time.LocalDateTime;
 
 public class Incident implements Serializable {
@@ -38,14 +39,26 @@ public class Incident implements Serializable {
         return type;
     }
 
+    public void setType(IncidentType type) {
+        this.type = type;
+    }
+
     public String getLocation() {
 
         return location;
     }
 
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
     public Severity getSeverity() {
 
         return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     public IncidentStatus getStatus() {
@@ -87,5 +100,18 @@ public class Incident implements Serializable {
 
     public void setAssignedVehicle(Vehicle vehicle) {
         this.assignedVehicle = vehicle;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Incident incident = (Incident) o;
+        return Objects.equals(id, incident.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

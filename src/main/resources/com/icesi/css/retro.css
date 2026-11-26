@@ -1,0 +1,413 @@
+/* ===== SGMMS - tema pixel-art retro =====
+   Bordes gruesos, sombras duras sin desenfoque y colores planos, como los juegos de 16 bits.
+   Cuando tengamos la fuente pixel (.ttf) se cambia solo -fx-font-family. */
+
+.root {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-color: #000000;
+    -fx-text-fill: #fff1e8;
+}
+
+.label {
+    -fx-text-fill: #fff1e8;
+}
+
+/* ---------- barra superior (HUD) ---------- */
+.hud-bar {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 0 0 4 0, 0 0 2 0;
+    -fx-border-insets: 0, 0 0 4 0;
+    -fx-padding: 10 12 14 12;
+    -fx-spacing: 10;
+}
+
+.hud-item {
+    -fx-font-size: 18px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 2, 2);
+}
+
+.hud-score  { -fx-text-fill: #ffec27; }
+.hud-active { -fx-text-fill: #ff77a8; }
+.hud-free   { -fx-text-fill: #00e436; }
+
+.hud-key {
+    -fx-font-size: 11px;
+    -fx-text-fill: #c2c3c7;
+}
+
+.hud-key-active {
+    -fx-font-size: 11px;
+    -fx-text-fill: #000000;
+    -fx-background-color: #ffec27;
+    -fx-padding: 2 5 2 5;
+}
+
+/* ---------- paneles con marco pixel ---------- */
+.pixel-panel {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 3;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 16;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 6, 6);
+}
+
+.panel-title {
+    -fx-font-size: 20px;
+    -fx-text-fill: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 3, 3);
+}
+
+.panel-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #83769c;
+}
+
+/* ---------- tarjetas de indicadores ---------- */
+.stat-card {
+    -fx-background-color: #000000;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-padding: 14;
+    -fx-spacing: 6;
+    -fx-min-width: 190;
+}
+
+.stat-card:hover {
+    -fx-border-color: #ffec27;
+}
+
+.stat-value {
+    -fx-font-size: 34px;
+    -fx-effect: dropshadow(one-pass-box, #5f574f, 0, 0, 3, 3);
+}
+
+.stat-name {
+    -fx-font-size: 12px;
+    -fx-text-fill: #c2c3c7;
+}
+
+/* ---------- botones tipo arcade ---------- */
+.pixel-button {
+    -fx-background-color: #ff004d;
+    -fx-background-radius: 0;
+    -fx-text-fill: #fff1e8;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-border-color: #000000;
+    -fx-border-width: 3;
+    -fx-padding: 8 16 8 16;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 4, 4);
+}
+
+.pixel-button:hover {
+    -fx-background-color: #ff77a8;
+}
+
+.pixel-button:pressed {
+    -fx-translate-x: 3;
+    -fx-translate-y: 3;
+    -fx-effect: null;
+}
+
+.pixel-button:disabled {
+    -fx-opacity: 0.35;
+}
+
+.button-blue   { -fx-background-color: #29adff; }
+.button-blue:hover { -fx-background-color: #83c8ff; }
+.button-green  { -fx-background-color: #008751; }
+.button-green:hover { -fx-background-color: #00e436; -fx-text-fill: #000000; }
+.button-yellow { -fx-background-color: #ffa300; -fx-text-fill: #000000; }
+.button-yellow:hover { -fx-background-color: #ffec27; }
+/* boton gris mientras la unidad va en camino: se ve apagado pero se lee bien */
+.button-gray { -fx-background-color: #5f574f; -fx-text-fill: #c2c3c7; }
+.button-gray:disabled { -fx-opacity: 1; }
+
+/* botones de las unidades en el despacho, del color de cada tipo */
+.button-patrol { -fx-background-color: #29adff; }
+.button-patrol:hover { -fx-background-color: #83c8ff; }
+.button-ambulance { -fx-background-color: #fff1e8; -fx-text-fill: #ff004d; }
+.button-ambulance:hover { -fx-background-color: #ffccaa; }
+.button-fire { -fx-background-color: #ff004d; }
+.button-fire:hover { -fx-background-color: #ff77a8; }
+
+/* ---------- caja de dialogo tipo RPG ---------- */
+.dialog-box {
+    -fx-background-color: #000000;
+    -fx-border-color: #fff1e8, #29adff;
+    -fx-border-width: 4, 2;
+    -fx-border-insets: 0, 6;
+    -fx-padding: 18 22 18 22;
+    -fx-spacing: 10;
+}
+
+.dialog-text {
+    -fx-font-size: 16px;
+    -fx-text-fill: #fff1e8;
+    -fx-wrap-text: true;
+}
+
+.dialog-arrow {
+    -fx-font-size: 16px;
+    -fx-text-fill: #ffec27;
+}
+
+/* ---------- tarjetas de incidentes ---------- */
+.incident-card {
+    -fx-background-color: #000000;
+    -fx-border-color: #5f574f;
+    -fx-border-width: 3;
+    -fx-padding: 10 12 10 12;
+    -fx-spacing: 12;
+}
+
+.incident-card:hover {
+    -fx-border-color: #fff1e8;
+}
+
+.incident-card-top {
+    -fx-border-color: #ffec27;
+    -fx-background-color: #1d1d10;
+}
+
+/* las tarjetas de gravedad alta alternan este borde rojo */
+.incident-card-pulse {
+    -fx-border-color: #ff004d;
+}
+
+.incident-id {
+    -fx-font-size: 16px;
+    -fx-text-fill: #fff1e8;
+}
+
+.incident-detail {
+    -fx-font-size: 12px;
+    -fx-text-fill: #c2c3c7;
+}
+
+.badge {
+    -fx-font-size: 11px;
+    -fx-padding: 2 8 2 8;
+    -fx-border-color: #000000;
+    -fx-border-width: 2;
+}
+
+.badge-high   { -fx-background-color: #ff004d; -fx-text-fill: #fff1e8; }
+.badge-medium { -fx-background-color: #ffa300; -fx-text-fill: #000000; }
+.badge-low    { -fx-background-color: #00e436; -fx-text-fill: #000000; }
+.badge-status { -fx-background-color: #29adff; -fx-text-fill: #000000; }
+
+/* ---------- notificaciones ---------- */
+.toast {
+    -fx-background-color: #7e2553;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 3;
+    -fx-padding: 10 16 10 16;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 4, 4);
+}
+
+.toast-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #fff1e8;
+}
+
+/* ---------- scroll sin estilo de sistema ---------- */
+.scroll-pane, .scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar {
+    -fx-background-color: #000000;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #83769c;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+    -fx-padding: 0;
+}
+
+/* fondo de las pantallas: azul muy oscuro que brilla un poco en el centro, como un monitor CRT */
+.crt-background {
+    -fx-background-color: radial-gradient(center 50% 45%, radius 80%, #161a40 0%, #0a0c22 55%, #040510 100%);
+}
+
+/* texto del nivel de alerta (NORMAL, PRECAUCION, CRITICO) */
+.hud-level {
+    -fx-font-size: 14px;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 2, 2);
+}
+
+/* marco de la barra de nivel de alerta del HUD */
+.alert-bar {
+    -fx-background-color: #000000;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 2;
+    -fx-padding: 2;
+}
+
+/* barra fina del operador encima de los incidentes */
+.operator-bar {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 2;
+    -fx-padding: 6 10 6 10;
+}
+
+.operator-bar-item {
+    -fx-font-size: 12px;
+    -fx-text-fill: #fff1e8;
+}
+
+.operator-bar-icon {
+    -fx-font-size: 14px;
+    -fx-text-fill: #ffec27;
+}
+
+.button-small {
+    -fx-font-size: 11px;
+    -fx-padding: 4 8 4 8;
+}
+
+/* reloj del turno en el HUD */
+.hud-timer { -fx-text-fill: #fff1e8; }
+.hud-timer-low { -fx-text-fill: #ff004d; }
+
+/* fin del turno */
+.shift-end-background { -fx-background-color: rgba(0, 0, 0, 0.75); }
+.shift-end-box {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 2;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 36 56 36 56;
+}
+.shift-end-score {
+    -fx-font-size: 28px;
+    -fx-text-fill: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 3, 3);
+}
+.shift-end-record { -fx-font-size: 16px; -fx-text-fill: #c2c3c7; }
+.shift-end-record-new { -fx-font-size: 20px; -fx-text-fill: #00e436; -fx-effect: dropshadow(one-pass-box, #008751, 0, 0, 2, 2); }
+
+/* ventana de ayuda */
+.help-text { -fx-font-size: 14px; -fx-text-fill: #fff1e8; }
+
+/* tarjeta marcada con TAB o clic */
+.incident-card-focus { -fx-effect: dropshadow(gaussian, #29adff, 16, 0.7, 0, 0); }
+
+/* ventana de opciones */
+.options-item { -fx-font-size: 20px; -fx-text-fill: #c2c3c7; }
+.options-selected { -fx-font-size: 22px; -fx-text-fill: #ffec27; -fx-effect: dropshadow(one-pass-box, #7e2553, 0, 0, 2, 2); }
+
+/* ---------- campos de texto y controles de formulario retro ---------- */
+.text-field, .pixel-input {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-color: #000000;
+    -fx-text-fill: #fff1e8;
+    -fx-prompt-text-fill: #5f574f;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 6 10 6 10;
+}
+
+.text-field:focused, .pixel-input:focused {
+    -fx-border-color: #ffec27;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 3, 3);
+}
+
+.combo-box, .pixel-combo-box {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-color: #000000;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
+    -fx-padding: 2 6 2 6;
+}
+
+.combo-box:focused, .pixel-combo-box:focused {
+    -fx-border-color: #ffec27;
+}
+
+.combo-box .cell, .pixel-combo-box .cell {
+    -fx-text-fill: #fff1e8;
+    -fx-background-color: transparent;
+}
+
+.combo-box .arrow, .pixel-combo-box .arrow {
+    -fx-background-color: #ffec27;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #000000;
+    -fx-border-color: #fff1e8;
+    -fx-border-width: 3;
+    -fx-background-radius: 0;
+}
+
+.combo-box-popup .list-cell {
+    -fx-text-fill: #fff1e8;
+    -fx-background-color: #000000;
+    -fx-padding: 6 10 6 10;
+}
+
+.combo-box-popup .list-cell:filled:hover, .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #1d2b53;
+    -fx-text-fill: #ffec27;
+}
+
+/* ---------- formulario modal de registro de incidentes ---------- */
+.form-modal-box {
+    -fx-background-color: #1d2b53;
+    -fx-border-color: #fff1e8, #000000;
+    -fx-border-width: 4, 3;
+    -fx-border-insets: 0, 4;
+    -fx-padding: 24 32 24 32;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 8, 8);
+    -fx-min-width: 540;
+    -fx-max-width: 600;
+}
+
+.form-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #ffec27;
+}
+
+.form-error {
+    -fx-font-size: 13px;
+    -fx-text-fill: #ff004d;
+    -fx-effect: dropshadow(one-pass-box, #000000, 0, 0, 2, 2);
+}
+
+/* ---------- barra de busqueda binaria ---------- */
+.search-bar {
+    -fx-background-color: #000000;
+    -fx-border-color: #83769c;
+    -fx-border-width: 3;
+    -fx-padding: 8 12 8 12;
+    -fx-spacing: 10;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.search-feedback-found {
+    -fx-font-size: 12px;
+    -fx-text-fill: #00e436;
+}
+
+.search-feedback-error {
+    -fx-font-size: 12px;
+    -fx-text-fill: #ff004d;
+}
