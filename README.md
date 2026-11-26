@@ -194,3 +194,11 @@ mvn javafx:run
 - **`ShiftTimer`**: Hilo del reloj de turno (cuenta regresiva de 5 minutos) que evalúa penalizaciones de espera cada 30 segundos.
 - **Sincronización Thread-Safe**: Todos los accesos mutables a listas enlazadas, árbol BST y flota en `GameController` utilizan métodos `synchronized`.
 - **Renderizado UI**: Las actualizaciones de la interfaz gráfica provenientes de hilos secundarios se delegan de forma segura al JavaFX Application Thread mediante `Platform.runLater()`.
+
+---
+
+PRIMEROS DISEÑOS DE FRONT:
+- Se decidio usar arte pixel art.
+- Primer dieño:
+
+- <img width="1280" height="820" alt="image" src="https://github.com/user-attachments/assets/3b0eb244-5420-4f82-bb0f-8aaf44fbd08d" />
