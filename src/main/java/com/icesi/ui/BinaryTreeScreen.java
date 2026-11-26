@@ -71,6 +71,7 @@ public class BinaryTreeScreen implements GameScreen {
     private Label selectedStatusLabel;
     private Label selectedVehicleLabel;
     private Incident selectedIncident;
+    private String lastSignature = "";
 
     // Mapa de posiciones de nodos dibujados para deteccion de clics
     private static class NodeBox {
@@ -315,9 +316,31 @@ public class BinaryTreeScreen implements GameScreen {
             traversalSequenceLabel.setText("No hay incidentes activos en el arbol BST.");
             traversalExplanationLabel.setText("Genera o registra un nuevo incidente para poblar el arbol.");
             selectedIncident = null;
-            updateInspector();
+            if (!"EMPTY".equals(lastSignature)) {
+                lastSignature = "EMPTY";
+                updateInspector();
+            }
             return;
         }
+
+        // Si el incidente seleccionado ya fue resuelto o no esta en el arbol activo, selecciona la raiz actual
+        if ((selectedIncident == null || !tree.contains(selectedIncident)) && tree.getRoot() != null) {
+            selectedIncident = tree.getRoot().getValue();
+        }
+
+        StringBuilder sig = new StringBuilder();
+        sig.append(currentMode).append('|').append(selectedIncident != null ? selectedIncident.getId() : "").append('|');
+        for (Incident inc : tree.inOrder()) {
+            sig.append(inc.getId()).append(':')
+               .append(inc.getSeverity()).append(':')
+               .append(inc.getStatus()).append(':')
+               .append(inc.getAssignedVehicle() != null ? inc.getAssignedVehicle().getId() : "").append(';');
+        }
+        String signature = sig.toString();
+        if (signature.equals(lastSignature)) {
+            return;
+        }
+        lastSignature = signature;
 
         nodeCountValue.setValue(tree.size());
         int height = tree.height();
@@ -331,11 +354,6 @@ public class BinaryTreeScreen implements GameScreen {
             balanceFactorLabel.setText("ACEPTABLE");
         } else {
             balanceFactorLabel.setText("DESBALANCEADO");
-        }
-
-        // Si no hay incidente seleccionado o ya no esta activo, selecciona la raiz
-        if (selectedIncident == null && tree.getRoot() != null) {
-            selectedIncident = tree.getRoot().getValue();
         }
 
         updateInspector();

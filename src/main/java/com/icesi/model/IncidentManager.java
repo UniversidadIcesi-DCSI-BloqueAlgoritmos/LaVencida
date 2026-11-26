@@ -38,6 +38,27 @@ public class IncidentManager implements Serializable {
         }
     }
 
+    // Actualiza un incidente activo y lo reubica en el BST segun su nueva prioridad.
+    public void updateIncident(String id, IncidentType type, Severity severity, String location, String description) {
+        if (id == null || id.isBlank() || type == null || severity == null || location == null || location.isBlank()) {
+            throw new IllegalArgumentException("Datos invalidos para actualizar el incidente");
+        }
+        Incident incident = findIncidentById(id);
+        if (incident.getStatus() == IncidentStatus.RESOLVED) {
+            throw new IncidentStateException("No se puede editar un incidente ya resuelto");
+        }
+        if (activeIncidentsTree != null) {
+            activeIncidentsTree.delete(incident);
+        }
+        incident.setType(type);
+        incident.setSeverity(severity);
+        incident.setLocation(location.trim());
+        incident.setDescription(description == null ? "" : description.trim());
+        if (activeIncidentsTree != null) {
+            activeIncidentsTree.insert(incident);
+        }
+    }
+
     // Indica si ya hay un incidente registrado con ese id.
     private boolean existsIncidentWithId(String id) {
         for (Incident current : incidents) {
@@ -282,6 +303,22 @@ public class IncidentManager implements Serializable {
             }
         }
         return count;
+    }
+
+    // Retorna la cantidad total de incidentes resueltos (RESOLVED).
+    public int getResolvedIncidentCount() {
+        int count = 0;
+        for (Incident current : incidents) {
+            if (current.getStatus() == IncidentStatus.RESOLVED) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Retorna la cantidad total de incidentes registrados.
+    public int getTotalIncidentCount() {
+        return incidents.size();
     }
 
     // RF13: Retorna la cantidad de accidentes activos.

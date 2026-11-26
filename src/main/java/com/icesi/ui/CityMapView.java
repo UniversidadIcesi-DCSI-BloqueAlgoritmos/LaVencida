@@ -41,6 +41,7 @@ public class CityMapView {
     private String focusedIncidentId; // incidente elegido en el panel: se resalta en el mapa
     private boolean emergencyCorridorsVisible = false; // visualizacion de corredores de emergencia (vias prioritarias)
     private BiConsumer<Integer, Integer> onCellClicked = (r, c) -> { };
+    private BiConsumer<Integer, Integer> onObstacleClicked = (r, c) -> { };
     private Consumer<String> onIncidentSelected = id -> { };
 
     // Arma las capas del mapa y arranca la animacion.
@@ -80,6 +81,7 @@ public class CityMapView {
                 } else {
                     shake();
                     RetroSound.play(RetroSound.Effect.ERROR);
+                    onObstacleClicked.accept(row, col);
                 }
             }
         });
@@ -159,8 +161,23 @@ public class CityMapView {
         this.onCellClicked = onCellClicked;
     }
 
+    public void setOnObstacleClicked(BiConsumer<Integer, Integer> onObstacleClicked) {
+        this.onObstacleClicked = onObstacleClicked;
+    }
+
     public void setOnIncidentSelected(Consumer<String> onIncidentSelected) {
         this.onIncidentSelected = onIncidentSelected;
+    }
+
+    // Busca si hay algun vehiculo circulando o estacionado cerca de esa celda del mapa.
+    public Vehicle findVehicleAt(int row, int col) {
+        for (Vehicle vehicle : controller.getVehicles()) {
+            double[] pos = vehicleAnimator.positionOf(vehicle);
+            if (Math.round(pos[0]) == row && Math.round(pos[1]) == col) {
+                return vehicle;
+            }
+        }
+        return null;
     }
 
     private Incident findIncidentAt(int row, int col) {

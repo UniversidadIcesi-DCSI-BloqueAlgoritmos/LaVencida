@@ -39,14 +39,26 @@ public class Incident implements Serializable {
         return type;
     }
 
+    public void setType(IncidentType type) {
+        this.type = type;
+    }
+
     public String getLocation() {
 
         return location;
     }
 
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
     public Severity getSeverity() {
 
         return severity;
+    }
+
+    public void setSeverity(Severity severity) {
+        this.severity = severity;
     }
 
     public IncidentStatus getStatus() {

@@ -13,6 +13,7 @@ import com.icesi.ui.HudBar;
 import com.icesi.ui.IncidentPanelScreen;
 import com.icesi.ui.MobilityDialog;
 import com.icesi.ui.MonitoringCenterScreen;
+import com.icesi.ui.StatisticsDialog;
 import com.icesi.ui.PixelCursor;
 import com.icesi.ui.PixelTransition;
 import com.icesi.model.Incident;
@@ -76,6 +77,7 @@ public class GameApplication extends Application {
     private VehicleRegistrationDialog vehicleDialog;
     private TrafficSimulationDialog trafficDialog;
     private MobilityDialog mobilityDialog;
+    private StatisticsDialog statisticsDialog;
     private BinaryTreeScreen binaryTreeScreen;
     private CrtOverlay crtOverlay = new CrtOverlay();
     private static final String SAVE_FOLDER = "data/partida";
@@ -104,6 +106,7 @@ public class GameApplication extends Application {
         screens.put("center", centerScreen);
         IncidentPanelScreen incidentPanel = new IncidentPanelScreen(controller, eventLog);
         incidentPanel.setOnOpenRegistration(this::openRegistrationDialog);
+        incidentPanel.setOnOpenEdit(this::openEditDialog);
         incidentPanel.setNavigator(this::showScreen);
         screens.put("incidents", incidentPanel);
         // el incidente elegido en el panel se resalta en el mapa
@@ -122,6 +125,7 @@ public class GameApplication extends Application {
         screens.put("tree", binaryTreeScreen);
 
         registrationDialog.setOnRegister(this::handleManualIncidentRegistration);
+        registrationDialog.setOnUpdate(this::handleManualIncidentUpdate);
         registrationDialog.setOnCancel(() -> setPaused(false));
 
         vehicleDialog = new VehicleRegistrationDialog();
@@ -137,11 +141,41 @@ public class GameApplication extends Application {
         mobilityDialog.setOnClose(() -> setPaused(false));
         centerScreen.setOnOpenMobility(this::openMobilityDialog);
 
+        statisticsDialog = new StatisticsDialog(controller, highScores);
+        statisticsDialog.setOnClose(() -> setPaused(false));
+        centerScreen.setOnOpenStatistics(this::openStatisticsDialog);
+
         // Interaccion directa con el mapa (demo del curso): clic en celda crea accidente o resalta incidente
         mapView.setOnCellClicked(this::handleMapCellClicked);
+        mapView.setOnObstacleClicked((r, c) -> toasts.show("✕ Obstáculo en (" + r + ", " + c + "): vía bloqueada.", null));
         mapView.setOnIncidentSelected(incidentId -> {
             incidentPanel.handleKey(KeyCode.TAB);
         });
+
+        hud.setOnNavigate(screen -> {
+            if (started && !ended && !paused) {
+                RetroSound.play(RetroSound.Effect.MENU);
+                showScreen(screen);
+            }
+        });
+        hud.setOnToggleCorridors(() -> {
+            if (started && !ended && !paused) {
+                toggleEmergencyCorridors();
+            }
+        });
+        hud.setOnOpenStats(() -> {
+            if (started && !ended && !paused) {
+                openStatisticsDialog();
+            }
+        });
+        hud.setOnOpenHelp(() -> {
+            if (started && !ended && !paused) {
+                setPaused(true);
+                helpView.setVisible(true);
+                RetroSound.play(RetroSound.Effect.MENU);
+            }
+        });
+        hud.setOnToggleSound(() -> handleKey(KeyCode.N));
 
         BorderPane game = new BorderPane(content);
         game.setTop(hud);
@@ -151,7 +185,7 @@ public class GameApplication extends Application {
         toasts = new ToastLayer();
         // la capa CRT va encima de todo para que se vea como un monitor viejo
         shiftEndView = new ShiftEndView();
-        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, mobilityDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
+        root = new StackPane(game, pauseView, helpView, registrationDialog, vehicleDialog, trafficDialog, mobilityDialog, statisticsDialog, toasts, shiftEndView, titleScreen.getView(), optionsView, crtOverlay);
         // con el mouse: pasar por encima marca la opcion y el clic la confirma
         titleScreen.getView().setOnMouseMoved(e -> titleScreen.selectAt(e.getY()));
         titleScreen.getView().setOnMouseClicked(e -> {
@@ -421,6 +455,28 @@ public class GameApplication extends Application {
         announceIncident(incident);
     }
 
+    // Abre el formulario para actualizar tipo, gravedad, ubicacion o descripcion de un incidente activo.
+    public void openEditDialog(Incident incident) {
+        if (!started || ended || incident == null) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        registrationDialog.openForEdit(incident);
+    }
+
+    // Aplica la actualizacion del incidente y reordena el arbol binario BST.
+    private void handleManualIncidentUpdate(Incident updated) {
+        controller.updateIncident(updated.getId(), updated.getType(), updated.getSeverity(),
+                updated.getLocation(), updated.getDescription());
+        setPaused(false);
+        RetroSound.play(RetroSound.Effect.START);
+        toasts.show("✎ INCIDENTE ACTUALIZADO: " + updated.getId() + " (" + Texts.of(updated.getSeverity()) + ")",
+                SpriteRegistry.forIncident(updated.getType()));
+        eventLog.add("Incidente " + updated.getId() + " actualizado (" + Texts.of(updated.getSeverity()) + ").", EventLog.SYSTEM);
+        refreshAll();
+    }
+
     // Abre el simulador de accidentes bajo criterios operativos de transito (RF-4).
     public void openTrafficSimulationDialog() {
         if (!started || ended) {
@@ -439,6 +495,16 @@ public class GameApplication extends Application {
         setPaused(true);
         RetroSound.play(RetroSound.Effect.MENU);
         mobilityDialog.open();
+    }
+
+    // Abre la pantalla de estadisticas en tiempo real.
+    public void openStatisticsDialog() {
+        if (!started || ended) {
+            return;
+        }
+        setPaused(true);
+        RetroSound.play(RetroSound.Effect.MENU);
+        statisticsDialog.open();
     }
 
     // Conmuta la visualizacion de corredores de emergencia en el mapa.
@@ -461,16 +527,26 @@ public class GameApplication extends Application {
         announceIncident(accident);
     }
 
-    // Genera un accidente directamente al hacer clic en una celda del mapa (demo del curso).
+    // Genera un accidente directamente al hacer clic en una celda del mapa (detecta colision si hay un vehiculo alli).
     private void handleMapCellClicked(int row, int col) {
         if (!started || ended || paused) {
             return;
         }
         try {
-            Incident accident = controller.spawnAccidentAt(row, col);
+            Vehicle vehicleAtCell = mapView.findVehicleAt(row, col);
+            Incident accident;
+            if (vehicleAtCell != null) {
+                String location = "Calle Palmira (" + row + ", " + col + ")";
+                accident = controller.triggerCollisionAccident(vehicleAtCell.getId(), "VEH-TRANSITO", location);
+                toasts.show("¡COLISION DE " + vehicleAtCell.getId() + " EN (" + row + ", " + col + ")!",
+                        SpriteRegistry.forIncident(accident.getType()));
+            } else {
+                accident = controller.spawnAccidentAt(row, col);
+                toasts.show("¡ACCIDENTE REPORTADO EN (" + row + ", " + col + ")!",
+                        SpriteRegistry.forIncident(accident.getType()));
+            }
             RetroSound.play(RetroSound.Effect.ALERT);
             announceIncident(accident);
-            toasts.show("¡ACCIDENTE REPORTADO EN (" + row + ", " + col + ")!", SpriteRegistry.forIncident(accident.getType()));
         } catch (RuntimeException e) {
             toasts.show("No se pudo crear accidente: " + e.getMessage(), null);
         }
@@ -526,7 +602,7 @@ public class GameApplication extends Application {
             }
             return;
         }
-        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible()) || (mobilityDialog != null && mobilityDialog.isVisible())) {
+        if (registrationDialog.isVisible() || (vehicleDialog != null && vehicleDialog.isVisible()) || (trafficDialog != null && trafficDialog.isVisible()) || (mobilityDialog != null && mobilityDialog.isVisible()) || (statisticsDialog != null && statisticsDialog.isVisible())) {
             // los dialogos modales manejan sus propias teclas (ESC / ENTER)
             return;
         }
@@ -551,6 +627,10 @@ public class GameApplication extends Application {
         }
         if (code == KeyCode.E && !paused) {
             toggleEmergencyCorridors();
+            return;
+        }
+        if (code == KeyCode.K && !paused) {
+            openStatisticsDialog();
             return;
         }
         if (paused && code != KeyCode.P && code != KeyCode.N && code != KeyCode.F5 && code != KeyCode.F9 && code != KeyCode.F6 && code != KeyCode.F10) {

@@ -38,7 +38,10 @@ public class IncidentRegistrationDialog extends StackPane {
     private Label errorLabel;
 
     private Consumer<Incident> onRegister = incident -> { };
+    private Consumer<Incident> onUpdate = incident -> { };
     private Runnable onCancel = () -> { };
+    private boolean editMode;
+    private Label subtitle;
 
     public IncidentRegistrationDialog() {
         getStyleClass().add("shift-end-background");
@@ -49,8 +52,8 @@ public class IncidentRegistrationDialog extends StackPane {
         box.setMaxSize(StackPane.USE_PREF_SIZE, StackPane.USE_PREF_SIZE);
         box.setAlignment(Pos.TOP_LEFT);
 
-        Canvas headerTitle = PixelFont.createLabel("NUEVO INCIDENTE", 4, RetroTheme.YELLOW, RetroTheme.PURPLE);
-        Label subtitle = styled(new Label("FORMULARIO DE REGISTRO MANUAL - CENTRO DE MONITOREO PALMIRA"), "panel-subtitle");
+        Canvas headerTitle = PixelFont.createLabel("INCIDENTE", 4, RetroTheme.YELLOW, RetroTheme.PURPLE);
+        subtitle = styled(new Label("FORMULARIO DE REGISTRO MANUAL - CENTRO DE MONITOREO PALMIRA"), "panel-subtitle");
 
         GridPane grid = new GridPane();
         grid.setHgap(14);
@@ -183,11 +186,19 @@ public class IncidentRegistrationDialog extends StackPane {
         this.onRegister = onRegister;
     }
 
+    public void setOnUpdate(Consumer<Incident> onUpdate) {
+        this.onUpdate = onUpdate;
+    }
+
     public void setOnCancel(Runnable onCancel) {
         this.onCancel = onCancel;
     }
 
     public void open() {
+        editMode = false;
+        subtitle.setText("FORMULARIO DE REGISTRO MANUAL - CENTRO DE MONITOREO PALMIRA");
+        idField.setEditable(true);
+        idField.setDisable(false);
         errorLabel.setVisible(false);
         errorLabel.setText("");
         idField.setText("");
@@ -197,6 +208,26 @@ public class IncidentRegistrationDialog extends StackPane {
         locationCombo.getSelectionModel().selectFirst();
         setVisible(true);
         idField.requestFocus();
+    }
+
+    // Abre el mismo formulario para actualizar tipo, gravedad, ubicacion o descripcion de un incidente activo.
+    public void openForEdit(Incident incident) {
+        if (incident == null) {
+            return;
+        }
+        editMode = true;
+        subtitle.setText("ACTUALIZACION DE INCIDENTE ACTIVO: " + incident.getId());
+        errorLabel.setVisible(false);
+        errorLabel.setText("");
+        idField.setText(incident.getId());
+        idField.setEditable(false);
+        idField.setDisable(true);
+        typeCombo.setValue(incident.getType());
+        severityCombo.setValue(incident.getSeverity());
+        locationCombo.setValue(incident.getLocation());
+        descriptionField.setText(incident.getDescription() != null ? incident.getDescription() : "");
+        setVisible(true);
+        severityCombo.requestFocus();
     }
 
     public void close() {
@@ -234,7 +265,11 @@ public class IncidentRegistrationDialog extends StackPane {
         incident.setDescription(description);
 
         try {
-            onRegister.accept(incident);
+            if (editMode) {
+                onUpdate.accept(incident);
+            } else {
+                onRegister.accept(incident);
+            }
             close();
         } catch (DuplicateIncidentException e) {
             RetroSound.play(RetroSound.Effect.ERROR);

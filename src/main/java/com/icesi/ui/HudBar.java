@@ -7,6 +7,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 
+import java.util.function.Consumer;
+
 // Barra superior siempre visible: puntaje, incidentes activos, vehiculos libres y teclas para cambiar de pantalla.
 public class HudBar extends HBox {
 
@@ -21,6 +23,14 @@ public class HudBar extends HBox {
     private Label incidentsKey;
     private Label treeKey;
     private Label corridorKey;
+    private Label statsKey;
+    private Label helpKey;
+
+    private Consumer<String> onNavigate = screen -> { };
+    private Runnable onToggleCorridors = () -> { };
+    private Runnable onOpenStats = () -> { };
+    private Runnable onOpenHelp = () -> { };
+    private Runnable onToggleSound = () -> { };
 
     // Arma la barra con sus etiquetas.
     public HudBar() {
@@ -28,8 +38,8 @@ public class HudBar extends HBox {
         setAlignment(Pos.CENTER_LEFT);
 
         scoreLabel = createItem("♥ SCORE %06d", "hud-score");
-        activeLabel = createItem("★ ACTIVOS %02d", "hud-active");
-        freeLabel = createItem("■ LIBRES %02d", "hud-free");
+        activeLabel = createItem("★ ACT %02d", "hud-active");
+        freeLabel = createItem("■ LIB %02d", "hud-free");
         alertMeter = new AlertMeter();
         soundLabel = new Label();
         timerLabel = new Label("⏱ 05:00");
@@ -40,15 +50,26 @@ public class HudBar extends HBox {
 
         centerKey = new Label("[C] CENTRO");
         mapKey = new Label("[M] MAPA");
-        incidentsKey = new Label("[I] INCIDENTES");
-        treeKey = new Label("[B] ARBOL BST");
+        incidentsKey = new Label("[I] INCID.");
+        treeKey = new Label("[B] BST");
         corridorKey = new Label("[E] VIAS");
-        Label helpKey = new Label("[H] AYUDA");
+        statsKey = new Label("[K] STATS");
+        statsKey.getStyleClass().add("hud-key");
+        helpKey = new Label("[H] AYUDA");
         helpKey.getStyleClass().add("hud-key");
+
+        centerKey.setOnMouseClicked(e -> onNavigate.accept("center"));
+        mapKey.setOnMouseClicked(e -> onNavigate.accept("map"));
+        incidentsKey.setOnMouseClicked(e -> onNavigate.accept("incidents"));
+        treeKey.setOnMouseClicked(e -> onNavigate.accept("tree"));
+        corridorKey.setOnMouseClicked(e -> onToggleCorridors.run());
+        statsKey.setOnMouseClicked(e -> onOpenStats.run());
+        helpKey.setOnMouseClicked(e -> onOpenHelp.run());
+        soundLabel.setOnMouseClicked(e -> onToggleSound.run());
 
         getChildren().addAll(PixelFont.createLabel("SGMMS", 3, RetroTheme.YELLOW, RetroTheme.PURPLE),
                 scoreLabel, activeLabel, freeLabel, timerLabel, alertMeter, spacer, soundLabel,
-                centerKey, mapKey, incidentsKey, treeKey, corridorKey, helpKey);
+                centerKey, mapKey, incidentsKey, treeKey, corridorKey, statsKey, helpKey);
         setActiveScreen("center");
 
         // ningun texto del HUD se puede encoger: si falta espacio se achica el hueco del medio
@@ -102,5 +123,25 @@ public class HudBar extends HBox {
     private void markKey(Label key, boolean active) {
         key.getStyleClass().removeAll("hud-key", "hud-key-active");
         key.getStyleClass().add(active ? "hud-key-active" : "hud-key");
+    }
+
+    public void setOnNavigate(Consumer<String> onNavigate) {
+        this.onNavigate = onNavigate;
+    }
+
+    public void setOnToggleCorridors(Runnable onToggleCorridors) {
+        this.onToggleCorridors = onToggleCorridors;
+    }
+
+    public void setOnOpenStats(Runnable onOpenStats) {
+        this.onOpenStats = onOpenStats;
+    }
+
+    public void setOnOpenHelp(Runnable onOpenHelp) {
+        this.onOpenHelp = onOpenHelp;
+    }
+
+    public void setOnToggleSound(Runnable onToggleSound) {
+        this.onToggleSound = onToggleSound;
     }
 }

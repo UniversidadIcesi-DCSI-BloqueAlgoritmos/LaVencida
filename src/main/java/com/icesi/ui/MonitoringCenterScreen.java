@@ -12,7 +12,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -46,6 +48,7 @@ public class MonitoringCenterScreen implements GameScreen {
     private Runnable onOpenSimulation;
     private Runnable onOpenVehicleRegistration;
     private Runnable onOpenMobility;
+    private Runnable onOpenStatistics;
 
     // Arma la pantalla; navigator sirve para cambiar a "map" o "incidents".
     public MonitoringCenterScreen(GameController controller, Consumer<String> navigator, EventLog eventLog) {
@@ -120,7 +123,14 @@ public class MonitoringCenterScreen implements GameScreen {
                 onOpenMobility.run();
             }
         });
-        HBox buttons = new HBox(8, mapButton, incidentsButton, treeButton, spawnButton, registerButton, simButton, mobilityBtn);
+        Button statsBtn = pixelButton("[K] STATS", "button-green");
+        statsBtn.setOnAction(e -> {
+            if (onOpenStatistics != null) {
+                onOpenStatistics.run();
+            }
+        });
+        FlowPane buttons = new FlowPane(8, 8, mapButton, incidentsButton, treeButton, spawnButton, registerButton, simButton, mobilityBtn, statsBtn);
+        buttons.setAlignment(Pos.CENTER_LEFT);
 
         // los controles van en una sola columna para que quepa el registro de eventos al lado
         GridPane keys = new GridPane();
@@ -130,7 +140,7 @@ public class MonitoringCenterScreen implements GameScreen {
                 {"W A S D / FLECHAS", "MOVER AL OPERADOR"}, {"U", "DESHACER MOVIMIENTO"},
                 {"G", "GENERAR INCIDENTE"}, {"[+] / INSERT", "REGISTRAR INCIDENTE"},
                 {"[⚡] / [T]", "SIMULAR ACCIDENTES (RF-4)"}, {"L", "LIBERAR UNIDAD / CANCELAR"},
-                {"C  M  I  B", "CAMBIAR DE PANTALLA"}, {"E / V", "CORREDORES Y MOVILIDAD"},
+                {"C  M  I  B", "CAMBIAR DE PANTALLA"}, {"E / V / K", "CORREDORES, MOVILIDAD, STATS"},
                 {"P", "PAUSAR SIMULACION"}, {"ENTER / ESC", "DESPACHAR / CANCELAR"},
                 {"N", "SONIDO ON / OFF"},
                 {"F5 / F9", "GUARDAR / CARGAR JSON"}, {"F6 / F10", "GUARDAR / CARGAR .DAT"}
@@ -159,7 +169,14 @@ public class MonitoringCenterScreen implements GameScreen {
         VBox priorityPanel = new VBox(10, styled(new Label("★ MAYOR PRIORIDAD"), "panel-title"), priorityBox);
         priorityPanel.getStyleClass().add("pixel-panel");
 
-        fleetBox = new VBox(2);
+        fleetBox = new VBox(4);
+        ScrollPane fleetScroll = new ScrollPane(fleetBox);
+        fleetScroll.setFitToWidth(true);
+        fleetScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        fleetScroll.setPrefViewportHeight(125);
+        fleetScroll.setMaxHeight(135);
+        fleetScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
         Region pushFleet = new Region();
         HBox.setHgrow(pushFleet, Priority.ALWAYS);
         Button addVehicleBtn = pixelButton("[+] NUEVO", "button-blue");
@@ -171,7 +188,7 @@ public class MonitoringCenterScreen implements GameScreen {
         });
         HBox fleetHeader = new HBox(8, styled(new Label("■ FLOTA"), "panel-title"), pushFleet, addVehicleBtn);
         fleetHeader.setAlignment(Pos.CENTER_LEFT);
-        VBox fleetPanel = new VBox(10, fleetHeader, fleetBox);
+        VBox fleetPanel = new VBox(8, fleetHeader, fleetScroll);
         fleetPanel.getStyleClass().add("pixel-panel");
 
         // mini-mapa con la leyenda de colores abajo
@@ -212,6 +229,10 @@ public class MonitoringCenterScreen implements GameScreen {
 
     public void setOnOpenMobility(Runnable onOpenMobility) {
         this.onOpenMobility = onOpenMobility;
+    }
+
+    public void setOnOpenStatistics(Runnable onOpenStatistics) {
+        this.onOpenStatistics = onOpenStatistics;
     }
 
     @Override
@@ -278,6 +299,12 @@ public class MonitoringCenterScreen implements GameScreen {
                 return true;
             }
         }
+        if (code == KeyCode.K) {
+            if (onOpenStatistics != null) {
+                onOpenStatistics.run();
+                return true;
+            }
+        }
         return false;
     }
 
@@ -314,17 +341,38 @@ public class MonitoringCenterScreen implements GameScreen {
         priorityBox.getChildren().add(card);
     }
 
-    // Lista los vehiculos con su icono y estado.
+    // Lista los vehiculos con su icono, estacion base, estado y boton rapido de liberacion.
     private void refreshFleet() {
         fleetBox.getChildren().clear();
         for (Vehicle vehicle : controller.getVehicles()) {
             Label name = styled(new Label(vehicle.getId()), "incident-id");
+            Label station = styled(new Label(vehicle.getLocation()), "stat-name");
+            VBox meta = new VBox(1, name, station);
+
             Label status = styled(new Label(Texts.of(vehicle.getStatus())), "badge");
             status.getStyleClass().add(vehicle.getStatus() == VehicleStatus.AVAILABLE ? "badge-low" : "badge-status");
             Region push = new Region();
             HBox.setHgrow(push, Priority.ALWAYS);
-            HBox row = new HBox(10, SpriteRegistry.createIcon(SpriteRegistry.forVehicle(vehicle.getType()), 24), name, push, status);
+
+            HBox row = new HBox(8, SpriteRegistry.createIcon(SpriteRegistry.forVehicle(vehicle.getType()), 24), meta, push, status);
+            if (vehicle.getAssignedIncident() != null) {
+                Button freeBtn = pixelButton("✕", "button-gray");
+                freeBtn.getStyleClass().add("button-small");
+                freeBtn.setOnAction(e -> {
+                    controller.releaseVehicle(vehicle.getId());
+                    RetroSound.play(RetroSound.Effect.MENU);
+                    eventLog.add("Unidad " + vehicle.getId() + " liberada desde Centro.", EventLog.SYSTEM);
+                    refresh();
+                });
+                row.getChildren().add(freeBtn);
+            }
             row.setAlignment(Pos.CENTER_LEFT);
+            row.setOnMouseClicked(e -> {
+                String assigned = vehicle.getAssignedIncident() != null ? " · Atiende: " + vehicle.getAssignedIncident().getId() : "";
+                showEvent("CONSULTA UNIDAD " + vehicle.getId() + " (" + Texts.of(vehicle.getType()) + ") · Base: "
+                        + vehicle.getLocation() + " · Estado: " + Texts.of(vehicle.getStatus()) + assigned);
+                RetroSound.play(RetroSound.Effect.MENU);
+            });
             fleetBox.getChildren().add(row);
         }
     }
